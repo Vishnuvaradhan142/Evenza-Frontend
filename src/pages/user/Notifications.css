@@ -1,0 +1,383 @@
+/* Notifications.css
+   Modern, stylish notifications UI
+   - Uses .unread / .read classes from Notifications.jsx
+   - Glass modal, subtle shadows, animations, accessibility
+   - Adjusted top padding so the page content appears lower in the viewport
+*/
+
+/* ---------- Root variables ---------- */
+:root{
+  --accent-color: #4a3aff;        /* deep indigo */
+  --accent-hover: #372bce;
+  --page-bg: #f6f7fb;
+  --card-bg: #ffffff;
+  --border-color: rgba(20,20,30,0.06);
+  --unread-bg: linear-gradient(180deg, rgba(74,58,255,0.06), rgba(74,58,255,0.02));
+  --text-color: #0f1724;
+  --text-secondary: #667085;
+  --shadow-sm: 0 2px 8px rgba(12,20,40,0.06);
+  --shadow-md: 0 8px 30px rgba(12,20,40,0.10);
+  --unread-dot: #ff5a5f;
+  --card-radius: 12px;
+  --glass-bg: rgba(255,255,255,0.85);
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] {
+  --page-bg: #0b0c10;
+  --card-bg: rgba(18,18,19,0.6);
+  --border-color: rgba(255,255,255,0.03);
+  --text-color: #e7eefc;
+  --text-secondary: #98a0b3;
+  --unread-bg: linear-gradient(180deg, rgba(74,58,255,0.06), rgba(74,58,255,0.02));
+  --glass-bg: rgba(18,18,19,0.72);
+  --shadow-sm: 0 4px 14px rgba(0,0,0,0.6);
+  --shadow-md: 0 12px 40px rgba(0,0,0,0.6);
+}
+
+/* ---------- Page layout ---------- */
+/* Increased top padding so the page sits lower in the viewport */
+.notifications-page {
+  padding: 4.5rem 2rem 2rem; /* <- increased top padding */
+  min-height: calc(100vh - 3.5rem); /* keeps page visually lower while allowing scroll */
+  background: var(--page-bg);
+  animation: pageFadeIn 360ms ease;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* If you'd rather use centered container width (optional),
+   uncomment the block below and wrap your page content in a container
+   or keep as-is for full width layout.
+.notifications-page .container {
+  max-width: 980px;
+  margin: 0 auto;
+}
+*/
+
+/* Header */
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--accent-color);
+}
+
+.notifications-page .page-title::before {
+  content: "🔔";
+  font-size: 1.25rem;
+  transform: translateY(1px);
+}
+
+/* Clear All button */
+.clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent-color);
+  color: white;
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+.clear-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  background: var(--accent-hover);
+}
+.clear-btn:active { transform: translateY(-1px); }
+.clear-btn:focus { outline: 3px solid rgba(74,58,255,0.12); outline-offset: 2px; }
+
+/* ---------- List ---------- */
+.notifications-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+/* Each notification card */
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  cursor: pointer;
+  transition: transform 240ms cubic-bezier(.16,.84,.28,1), box-shadow 240ms ease, border-color 240ms ease, opacity 200ms ease;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  position: relative;
+  min-height: 68px;
+}
+
+/* Hover / focus */
+.notification-item:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
+}
+.notification-item:focus {
+  outline: 3px solid rgba(74,58,255,0.10);
+  outline-offset: 4px;
+}
+
+/* Read / Unread states */
+.notification-item.unread {
+  background: var(--unread-bg);
+  border-left: 4px solid var(--accent-color);
+}
+
+.notification-item.read {
+  opacity: 0.82;
+  border-left: 4px solid transparent;
+}
+
+/* Unread dot (small circular indicator on the left) */
+.notification-item.unread::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(74,58,255,0.18);
+}
+
+/* Icon slot */
+.notification-item .icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+  color: var(--accent-color);
+  box-shadow: 0 6px 18px rgba(10,15,30,0.04) inset;
+}
+
+/* Optional semantic icons */
+.notification-item .event::before { content: "🎉"; }
+.notification-item .alert::before { content: "⚠️"; }
+.notification-item .info::before  { content: "ℹ️"; }
+.notification-item .in-app::before { content: "🔔"; }
+
+/* Text block */
+.notification-item .text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Title & meta */
+.notification-item .text p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 0.98rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-item .text small {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  display: block;
+  margin-top: 2px;
+}
+
+/* A tiny preview / excerpt line if you want */
+.notification-item .excerpt {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right action (e.g., chevron or time) */
+.notification-item .meta {
+  margin-left: 12px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* micro timestamp in meta */
+.notification-item .meta .time {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* Placeholder when no notifications */
+.no-notifs {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  background: transparent;
+  border-radius: 12px;
+}
+.no-notifs::before { content: "📭"; font-size: 2rem; display: block; margin-bottom: 0.6rem; }
+
+/* ---------- Modal (notification details) ---------- */
+.notif-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4,6,12,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1400;
+  padding: 1.25rem;
+  animation: overlayFadeIn 240ms ease;
+}
+
+/* Glass card modal */
+.notif-modal {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  padding: 22px;
+  width: 460px;
+  max-width: 100%;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(5,8,20,0.45);
+  text-align: left;
+  animation: modalPop 260ms cubic-bezier(.16,.84,.28,1);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Modal content */
+.notif-modal h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.15rem;
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.notif-modal h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.notif-modal p {
+  margin: 0 0 12px 0;
+  line-height: 1.45;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
+.notif-modal small {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 14px;
+}
+
+/* Modal actions */
+.close-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: var(--accent-color);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 8px 30px rgba(74,58,255,0.18);
+  transition: transform 160ms ease, background 160ms ease;
+}
+.close-btn:hover { transform: translateY(-3px); background: var(--accent-hover); }
+.close-btn:focus { outline: 3px solid rgba(74,58,255,0.12); outline-offset: 4px; }
+
+/* Optional secondary actions */
+.notif-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* ---------- Small UI niceties ---------- */
+.fade-in { animation: itemFadeIn 280ms ease both; }
+
+/* Accessibility focus ring for keyboard nav */
+.notification-item:focus { box-shadow: 0 8px 28px rgba(74,58,255,0.08); }
+
+/* ---------- Animations ---------- */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes itemFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 800px) {
+  /* reduce the top padding on small screens so content isn't pushed too low */
+  .notifications-page {
+    padding: 2rem 1rem 1.25rem;
+    min-height: auto;
+  }
+  .page-title { font-size: 1.25rem; }
+  .notification-item { padding: 0.85rem; border-radius: 10px; }
+  .notification-item .icon { width: 44px; height: 44px; border-radius: 10px; }
+  .notif-modal { width: 100%; padding: 18px; border-radius: 12px; }
+}
+
+/* ---------- Helpers (optional) ---------- */
+/* small pill for types */
+.notif-pill {
+  display:inline-block;
+  padding:0.18rem 0.5rem;
+  border-radius:999px;
+  font-size:0.78rem;
+  color:var(--text-secondary);
+  background: rgba(0,0,0,0.03);
+  margin-left:8px;
+}

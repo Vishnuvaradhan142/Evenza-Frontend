@@ -1,0 +1,234 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+// Common Pages
+import Login from "../pages/common/Login";
+import Signup from "../pages/common/Signup";
+import Logout from "../pages/common/Logout";
+
+// Components
+import ProtectedRoute from "../components/common/ProtectedRoute";
+
+// Layouts
+import LayoutUser from "../components/Layouts/LayoutUser";
+import LayoutAdmin from "../components/Layouts/LayoutAdmin";
+import LayoutOwner from "../components/Layouts/LayoutOwner";
+
+// USER Pages
+import Dashboard from "../pages/user/Dashboard";
+import Recommendations from "../pages/user/Recommendations";
+import Calendar from "../pages/user/CalendarView";
+import BrowseEvents from "../pages/user/BrowseEvents";
+import SavedEvents from "../pages/user/SavedEvents";
+import MyEvents from "../pages/user/MyEvents";
+import MyTickets from "../pages/user/MyTickets";
+import WaitlistedEvents from "../pages/user/WaitlistedEvents";
+import ChatRooms from "../pages/user/ChatRooms";
+import Friends from "../pages/user/Friends";
+import Notifications from "../pages/user/Notifications";
+import FAQs from "../pages/user/FAQs";
+import Certificates from "../pages/user/BadgesCertificates";
+import Profile from "../pages/user/Profile";
+import UpcomingEvents from "../pages/user/UpcomingEvents";
+
+// Admin Pages
+import AddEvent from "../pages/admin/AddEvent";
+import MyAdminEvents from "../pages/admin/MyAdminEvents";
+import DuplicateTemplate from "../pages/admin/DuplicateTemplate";
+import ScheduleManager from "../pages/admin/ScheduleManager";
+import FAQsManager from "../pages/admin/FAQsManager";
+import Registrations from "../pages/admin/Registrations";
+import ChatParticipants from "../pages/admin/ChatParticipants";
+import Announcements from "../pages/admin/Announcements";
+import DocumentsUpload from "../pages/admin/DocumentsUpload";
+import EventSubmission from "../pages/admin/EventSubmission";
+import PaymentDashboard from "../pages/admin/PaymentDashboard";
+import RegistrationFormDesigner from "../pages/admin/RegistrationFormDesigner";
+import TicketScanner from "../pages/admin/TicketScanner";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminAnalytics from "../pages/admin/AdminAnalytics";
+import AllEventsAdmin from "../pages/admin/AllEventsAdmin";
+import RejectedEvents from "../pages/admin/RejectedEvents";
+import FeedbackRatings from "../pages/admin/FeedbackRatings";
+import CollaboratorAccess from "../pages/admin/CollaboratorAccess";
+import ReportCenter from "../pages/admin/ReportCenter";
+import AdminProfile from "../pages/admin/AdminProfile";
+import AdminNotifications from "../pages/admin/AdminNotifications";
+
+// Owner Pages
+import OwnerDashboard from "../pages/owner/OwnerDashboard";
+import OwnerProfile from "../pages/owner/OwnerProfile";
+import SiteSettings from "../pages/owner/SiteSettings";
+import DesignEditor from "../pages/owner/DesignEditor";
+
+import EventCategory from "../pages/owner/EventCategory";
+import RolesManager from "../pages/owner/RolesManager";
+import ManageAdmins from "../pages/owner/ManageAdmins";
+import ManageUsers from "../pages/owner/ManageUsers";
+import AdminRequests from "../pages/owner/AdminRequests";
+import LoginLogs from "../pages/owner/LoginLogs";
+import ActivityLogs from "../pages/owner/ActivityLogs";
+import OwnerNotifications from "../pages/owner/OwnerNotifications";
+import EventsAnalytics from "../pages/owner/EventsAnalytics";
+import ReportsIssues from "../pages/owner/ReportsIssues";
+import RevenueDashboard from "../pages/owner/RevenueDashboard";
+import AllEvents from "../pages/owner/AllEvents";
+import ArchiveEvents from "../pages/owner/ArchiveEvents";
+import PublicReviews from "../pages/owner/PublicReviews";
+import ContentModeration from "../pages/owner/ContentModeration";
+import EmailTemplates from "../pages/owner/EmailTemplates";
+import SMSGateway from "../pages/owner/SMSGateway";
+
+const AppRoutes = () => {
+  return (
+    <Router>
+      <Routes>
+        {/* Auth Pages */}
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* USER ROUTES - Protected */}
+        <Route
+          path="/user"
+          element={
+            <ProtectedRoute requiredRole="user">
+              <LayoutUser />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="home/dashboard" replace />} />
+          {/* HOME */}
+          <Route path="home/dashboard" element={<Dashboard />} />
+            <Route path="home/recommendations" element={<Recommendations />} />
+            <Route path="home/calendar" element={<Calendar />} />
+          {/* EVENTS */}
+          <Route path="events/browse" element={<BrowseEvents />} />
+          <Route path="events/saved" element={<SavedEvents />} />
+          <Route path="events/my-events" element={<MyEvents />} />
+          <Route path="events/my-tickets" element={<MyTickets />} />
+          <Route path="events/waitlisted" element={<WaitlistedEvents />} />
+          <Route path="events/upcoming" element={<UpcomingEvents />} />
+          {/* ENGAGEMENT */}
+          <Route path="engagement/chat" element={<ChatRooms />} />
+          <Route path="engagement/friends" element={<Friends />} />
+          {/** Earn Rewards removed **/}
+          {/* COMMUNITY */}
+          <Route path="community/notifications" element={<Notifications />} />
+          <Route path="community/faqs" element={<FAQs />} />
+          {/* ACHIEVEMENTS */}
+          <Route path="achievements/certificates" element={<Certificates />} />
+          {/* PROFILE */}
+          <Route path="profile" element={<Profile />} />
+          <Route path="logout" element={<Logout />} />
+        </Route>
+
+        {/* ADMIN ROUTES - Protected */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <LayoutAdmin />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="analytics/dashboard" replace />} />
+
+          {/* Direct collaborators shortcut */}
+          <Route path="collaborators" element={<CollaboratorAccess />} />
+
+          {/* EVENT */}
+          <Route path="event">
+            <Route path="newevent" element={<AddEvent />} />
+            <Route path="manage" element={<MyAdminEvents />} />
+            <Route path="template" element={<DuplicateTemplate />} />
+            <Route path="event-submission" element={<EventSubmission />} />
+            <Route path="documents" element={<DocumentsUpload />} />
+          </Route>
+
+          {/* MANAGEMENT */}
+          <Route path="management">
+            <Route path="tracking" element={<Registrations />} />
+            <Route path="announcements" element={<Announcements />} />
+            <Route path="configuration" element={<FAQsManager />} />
+            <Route path="communication" element={<ChatParticipants />} />
+            <Route path="registration-designer" element={<RegistrationFormDesigner />} />
+          </Route>
+
+            {/* CONTROL */}
+            <Route path="control">
+              <Route path="payment" element={<PaymentDashboard />} />
+              <Route path="scanner" element={<TicketScanner />} />
+            </Route>
+
+            {/* ANALYTICS */}
+            <Route path="analytics">
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="performance" element={<AdminAnalytics />} />
+              <Route path="ratings" element={<FeedbackRatings />} />
+              <Route path="schedule" element={<ScheduleManager />} />
+              <Route path="all-events" element={<AllEventsAdmin />} />
+              <Route path="rejected" element={<RejectedEvents />} />
+            </Route>
+
+            {/* SUPPORT */}
+            <Route path="support">
+              <Route path="access" element={<CollaboratorAccess />} />
+              <Route path="center" element={<ReportCenter />} />
+            </Route>
+
+            {/* PROFILE */}
+            <Route path="profile" element={<AdminProfile />} />
+            <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="logout" element={<Logout />} />
+        </Route>
+
+        {/* OWNER ROUTES - Protected */}
+        <Route
+          path="/owner"
+          element={
+            <ProtectedRoute requiredRole="owner">
+              <LayoutOwner />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="management/dashboard" replace />} />
+          {/* Management */}
+          <Route path="management/dashboard" element={<OwnerDashboard />} />
+          <Route path="management/site" element={<SiteSettings />} />
+          <Route path="management/design" element={<DesignEditor />} />
+
+          <Route path="management/category" element={<EventCategory />} />
+          <Route path="management/roles" element={<RolesManager />} />
+          {/* Controls */}
+          <Route path="controls/admins" element={<ManageAdmins />} />
+          <Route path="controls/users" element={<ManageUsers />} />
+          <Route path="controls/requests" element={<AdminRequests />} />
+          <Route path="controls/login" element={<LoginLogs />} />
+          <Route path="controls/activity" element={<ActivityLogs />} />
+          <Route path="controls/notifications" element={<OwnerNotifications />} />
+          {/* Analytics */}
+          <Route path="analytics/events" element={<EventsAnalytics />} />
+          <Route path="analytics/issues" element={<ReportsIssues />} />
+          <Route path="analytics/revenue" element={<RevenueDashboard />} />
+          {/* Oversight */}
+          <Route path="oversight/events" element={<AllEvents />} />
+          <Route path="oversight/archive" element={<ArchiveEvents />} />
+          <Route path="oversight/reviews" element={<PublicReviews />} />
+          <Route path="oversight/moderation" element={<ContentModeration />} />
+          {/* Communication */}
+          <Route path="communication/templates" element={<EmailTemplates />} />
+          <Route path="communication/settings" element={<SMSGateway />} />
+          {/* Profile */}
+          <Route path="profile" element={<OwnerProfile />} />
+          <Route path="logout" element={<Logout />} />
+        </Route>
+
+        {/* 404 Fallback */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default AppRoutes;

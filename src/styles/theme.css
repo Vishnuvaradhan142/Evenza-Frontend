@@ -1,0 +1,31 @@
+/* theme.css */
+
+:root {
+  /* Light Theme (Indigo + Coral) */
+  --bg-color: #fefefe;
+  --text-color: #1a1a1a;
+  --primary-color: #3f3d56;
+  --accent-color: #ff6f61;
+  --card-bg: #ffffff;
+  --topbar-bg: #fff;
+  --topbar-text: #3f3d56;
+  --sidebar-bg: var(--card-bg, #ffffff);
+  --sidebar-text: var(--primary-color, #3f3d56);
+  --button-bg: #3f3d56;
+  --button-text: #ffffff;
+}
+
+[data-theme='dark'] {
+  /* Dark Theme (Deep Blue + Soft Gold) */
+  --bg-color: #0f172a;
+  --text-color: #f9f9f9;
+  --primary-color: #1e3a8a;
+  --accent-color: #f9d89c;
+  --card-bg: #1e293b;
+  --topbar-bg: #1e293b;
+  --topbar-text: #f9f9f9;
+  --sidebar-bg: #1e293b;
+  --sidebar-text: #f9f9f9;
+  --button-bg: #1e3a8a;
+  --button-text: #f9f9f9;
+}

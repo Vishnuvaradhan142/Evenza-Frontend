@@ -1,0 +1,312 @@
+/*
+  Registrations.css
+  Frontend-only, modern glassmorphism styling for Registration Tracking
+*/
+
+:root {
+  --glass-bg: rgba(255,255,255,0.6);
+  --glass-border: rgba(255,255,255,0.4);
+  --txt: #111827;
+  --txt-muted: #6b7280;
+  --bg: #f3f4f6;
+  --accent: #6d28d9;
+  --green: #16a34a;
+  --amber: #2563eb;
+  --red: #dc2626;
+  --purple: #7c3aed;
+}
+
+[data-theme="dark"] {
+  --glass-bg: rgba(46, 58, 78, 0.85);
+  --glass-border: rgba(79, 102, 139, 0.5);
+  --txt: #f0f4f8;
+  --txt-muted: #b5c2d1;
+  --bg: #1e293b;
+  --accent: #a855f7;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #c084fc;
+}
+
+/* Ensure dark mode background overrides */
+[data-theme="dark"] .registrations-page {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(192, 132, 252, 0.08) 50%, rgba(30, 41, 59, 0.9)) !important;
+}
+
+.registrations-page {
+  color: var(--txt);
+  padding: 12px 8px 6px 8px; /* reduced padding like ChatParticipants */
+  background: linear-gradient(180deg, rgba(109,40,217,0.08), transparent 200px);
+  height: 100vh; /* full viewport height */
+  min-height: 100vh;
+  overflow: hidden; /* prevent page scroll */
+  width: 100%;
+  max-width: none;
+  position: relative;
+}
+
+/* Two-column layout with sidebar from top */
+.registrations-page .registrations-wrapper {
+  display: flex;
+  gap: 0; /* no gap since sidebar is fixed */
+  flex: 1 1 auto; /* fill remaining height */
+  min-height: 0; /* allow inner scroll areas */
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden; /* prevent outer scroll */
+  height: calc(100vh - 24px); /* account for page padding */
+}
+
+.registrations-page .reg-sidebar {
+  width: 300px;
+  min-width: 280px;
+  flex-shrink: 0;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(109,40,217,0.1);
+  overflow-y: auto;
+  max-height: 480px;
+  position: fixed;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  margin-top: 80px;
+  z-index: 10;
+}
+.registrations-page .sidebar-header h2 { margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: var(--txt); }
+.registrations-page .events-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.registrations-page .event-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  transition: all 200ms ease;
+  margin-bottom: 8px;
+}
+.registrations-page .event-item:hover {
+  background: rgba(109,40,217,0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(109,40,217,0.15);
+}
+.registrations-page .event-item.active {
+  background: rgba(109,40,217,0.12);
+  border-color: rgba(109,40,217,0.3);
+  box-shadow: 0 4px 16px rgba(109,40,217,0.2);
+}
+.registrations-page .event-row { display:flex; align-items:center; justify-content:space-between; gap: 8px; }
+.registrations-page .event-name { font-weight: 600; }
+.registrations-page .event-count { font-size: 12px; color: var(--txt-muted); }
+.registrations-page .event-badges { display:flex; gap:6px; }
+.registrations-page .mini-pill { display:inline-flex; align-items:center; justify-content:center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; font-size: 12px; border: 1px solid var(--glass-border); }
+.registrations-page .mini-pill.green { color: var(--green); border-color: color-mix(in oklab, var(--green) 30%, var(--glass-border)); }
+.registrations-page .mini-pill.amber { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 30%, var(--glass-border)); }
+.registrations-page .mini-pill.red { color: var(--red); border-color: color-mix(in oklab, var(--red) 30%, var(--glass-border)); }
+.registrations-page .no-events { color: var(--txt-muted); padding: 8px 10px; }
+
+.registrations-page .reg-main { 
+  flex: 1; 
+  display:flex; 
+  flex-direction: column;
+  overflow-y: auto; /* enable scroll for main content */
+  margin-left: 320px; /* Account for fixed sidebar width + gap */
+  height: 100%; /* full height of wrapper */
+  padding-right: 16px; /* add some right padding */
+}
+
+.registrations-page .reg-main-header { 
+  display:flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 4px 2px; 
+  margin-bottom: 0; 
+}
+
+.registrations-page .page-header { margin-bottom: 0; text-align: center; position: relative; }
+.registrations-page .page-title { 
+  font-size: 24px; 
+  font-weight: 700; 
+  margin: 0; 
+  color: #3b82f6; 
+  text-align: center;
+  position: relative;
+}
+
+.registrations-page .page-title::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 3px;
+  background: linear-gradient(90deg, #7c3aed, rgba(124, 58, 237, 0.6));
+  border-radius: 2px;
+}
+
+.registrations-page .page-title::before { content: none !important; }
+.registrations-page .page-title .title-icon { vertical-align: -3px; margin-right: 8px; color: var(--accent); }
+.registrations-page .page-header p { margin: 6px 0 12px; color: var(--txt-muted); text-align: center; margin-right: 20px; }
+
+.registrations-page .chips { display:flex; flex-wrap:wrap; gap: 8px; }
+.registrations-page .chip {
+  display:inline-flex; align-items:center; gap:6px; padding: 6px 10px;
+  background: transparent;
+  border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 999px;
+  color: #3b82f6;
+  font-weight: 600;
+}
+.registrations-page .chip.green { color: var(--green); border-color: color-mix(in oklab, var(--green) 30%, var(--glass-border)); }
+.registrations-page .chip.amber { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 30%, var(--glass-border)); }
+.registrations-page .chip.red { color: var(--red); border-color: color-mix(in oklab, var(--red) 30%, var(--glass-border)); }
+.registrations-page .chip.purple { color: var(--purple); border-color: color-mix(in oklab, var(--purple) 30%, var(--glass-border)); }
+.registrations-page .chip.pill { text-transform: capitalize; }
+.registrations-page .chip.active { outline: 2px solid var(--accent); }
+
+.registrations-page .toolbar {
+  display:flex; align-items:center; gap: 12px; margin: 0 0 4px 0;
+}
+.registrations-page .search {
+  display:flex; align-items:center; gap:8px; padding: 8px 12px; border-radius: 10px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); flex: 1 1 320px;
+}
+.registrations-page .search input { flex:1; border:0; outline:none; background: transparent; color: var(--txt); }
+.registrations-page .filters { display:flex; align-items:center; gap:8px; }
+.registrations-page .spacer { flex: 1; }
+.registrations-page .actions { display:flex; align-items:center; gap:8px; }
+.registrations-page select { padding: 6px 8px; border-radius: 8px; background: var(--glass-bg); color: var(--txt); border:1px solid var(--glass-border); }
+.registrations-page .btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--glass-border); background: var(--glass-bg); color:var(--txt); cursor:pointer; }
+.registrations-page .btn.ghost { background: transparent; }
+.registrations-page .btn.small { padding:6px 10px; font-size: 0.9rem; }
+.registrations-page .btn.danger { color: var(--red); border-color: color-mix(in oklab, var(--red) 30%, var(--glass-border)); }
+.registrations-page .icon-btn { display:inline-flex; align-items:center; justify-content:center; width: 34px; height: 34px; border-radius: 8px; border:1px solid var(--glass-border); background: var(--glass-bg); color:var(--txt); cursor:pointer; }
+
+.registrations-page .bulk-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 10px;
+}
+.registrations-page .bulk-bar .help { color: var(--txt-muted); margin-left: 8px; }
+.registrations-page .bulk-actions { display:flex; gap:8px; }
+
+.registrations-page .table-wrap {
+  overflow:auto; border-radius: 14px; border:1px solid var(--glass-border);
+  background: var(--glass-bg); backdrop-filter: blur(10px);
+}
+.registrations-page .reg-table { width:100%; border-collapse: collapse; }
+.registrations-page .reg-table th, .registrations-page .reg-table td { padding: 10px 12px; border-bottom: 1px solid var(--glass-border); }
+.registrations-page .reg-table tbody td:nth-child(2) { font-size: 14px; } /* Name column - smaller font */
+.registrations-page .reg-table thead th { position:sticky; top:0; background: color-mix(in oklab, var(--glass-bg) 70%, #fff); cursor: pointer; }
+.registrations-page .reg-table th.sorted.asc::after { content: ' \2191'; }
+.registrations-page .reg-table th.sorted.desc::after { content: ' \2193'; }
+.registrations-page .reg-table td .pill.status { padding: 4px 8px; border-radius:999px; border:1px solid var(--glass-border); text-transform: capitalize; }
+.registrations-page .pill.status.confirmed { 
+  color: var(--green); 
+  border-color: var(--green); 
+}
+.registrations-page .pill.status.pending { 
+  color: var(--amber); 
+  border-color: var(--amber); 
+}
+.registrations-page .pill.status.cancelled { 
+  color: var(--red); 
+  border-color: var(--red); 
+}
+.registrations-page .pill.status.waitlisted { 
+  color: var(--purple); 
+  border-color: var(--purple); 
+}
+.registrations-page .muted { color: var(--txt-muted); }
+
+.registrations-page .row-actions { display:flex; gap:6px; }
+.registrations-page .empty { text-align:center; padding: 24px; color: var(--txt-muted); }
+
+.registrations-page .pager { display:flex; align-items:center; gap:12px; justify-content:center; margin: 14px 0; }
+
+/* Dark theme specific styles */
+[data-theme="dark"] .registrations-page .page-title {
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .registrations-page .page-title::after {
+  background: linear-gradient(90deg, #a855f7, #c084fc) !important;
+}
+
+[data-theme="dark"] .registrations-page .page-header p {
+  color: #e5e7eb !important;
+}
+
+[data-theme="dark"] .registrations-page .chip {
+  background: rgba(96, 165, 250, 0.15) !important;
+  border: 1px solid rgba(96, 165, 250, 0.4) !important;
+  color: #60a5fa !important;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .registrations-page .chip.green {
+  color: #10b981 !important;
+  border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .registrations-page .chip.amber {
+  color: #f59e0b !important;
+  border-color: #f59e0b !important;
+}
+
+[data-theme="dark"] .registrations-page .chip.red {
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
+[data-theme="dark"] .registrations-page .chip.purple {
+  color: #c084fc !important;
+  border-color: #c084fc !important;
+}
+
+[data-theme="dark"] .registrations-page .event-item {
+  background: rgba(71, 85, 105, 0.3);
+  border-color: rgba(94, 112, 154, 0.3);
+}
+
+[data-theme="dark"] .registrations-page .event-item:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.15);
+}
+
+[data-theme="dark"] .registrations-page .event-item.active {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.2);
+}
+
+[data-theme="dark"] .registrations-page .reg-sidebar {
+  background: rgba(46, 58, 78, 0.95);
+  border: 1px solid rgba(79, 102, 139, 0.4);
+  box-shadow: 0 10px 25px rgba(30, 41, 59, 0.4);
+}
+
+@media (max-width: 900px) {
+  .registrations-page .registrations-wrapper { flex-direction: column; }
+  .registrations-page .reg-sidebar { width: 100%; max-height: 240px; }
+  .registrations-page .search { flex-basis: 200px; }
+  .registrations-page .actions { display:none; }
+  .registrations-page .reg-table th:nth-child(3), .registrations-page .reg-table td:nth-child(3) { display:none; }
+  .registrations-page .reg-table th:nth-child(6), .registrations-page .reg-table td:nth-child(6) { display:none; }
+}

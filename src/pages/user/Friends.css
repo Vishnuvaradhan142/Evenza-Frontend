@@ -1,0 +1,285 @@
+/* Root theme variables */
+:root {
+  --bg-light: #f4f6f8;
+  --bg-dark: #1e1e2f;
+  --card-light: #fff;
+  --card-dark: #2c2c3e;
+  --text-light: #1f1f1f;
+  --text-dark: #f0f0f0;
+  --accent: #4f46e5;
+  --status-online: #34d399;
+  --status-offline: #9ca3af;
+  --status-busy: #f87171;
+}
+
+/* Dark mode support */
+body.dark-mode {
+  --bg-color: var(--bg-dark);
+  --card-color: var(--card-dark);
+  --text-color: var(--text-dark);
+}
+
+body.light-mode {
+  --bg-color: var(--bg-light);
+  --card-color: var(--card-light);
+  --text-color: var(--text-light);
+}
+
+/* Page background */
+.friends-page {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', sans-serif;
+  padding: 2rem;
+  gap: 2rem;
+  box-sizing: border-box;
+}
+
+/* Friends list */
+.friends-list-container {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-color);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.friends-list-container h2 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.friend-card {
+  padding: 0.8rem;
+  border-radius: 8px;
+  background-color: var(--bg-color);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friend-card:hover {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.friend-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+}
+
+.status-dot.online {
+  background-color: var(--status-online);
+}
+
+.status-dot.offline {
+  background-color: var(--status-offline);
+}
+
+.status-dot.busy {
+  background-color: var(--status-busy);
+}
+
+.status-text {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Chat overlay */
+.chat-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.chat-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Chat container with smooth open */
+.chat-container {
+  position: fixed;
+  top: 62%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 400px;
+  max-width: 95%;
+  height: 500px;
+  background-color: var(--card-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease, transform 0.3s ease;
+}
+
+.chat-container.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Chat header */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.chat-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-color);
+}
+
+/* Messages */
+.messages-container {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  overflow-y: auto;
+  background-color: var(--bg-color);
+}
+
+/* Messages styles */
+.message {
+  max-width: 80%;
+  padding: 0.5rem 0.8rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  word-wrap: break-word;
+}
+
+.my-message {
+  background-color: var(--accent);
+  color: #fff;
+  align-self: flex-end;
+}
+
+.other-message {
+  background-color: #e5e7eb;
+  color: var(--text-color);
+  align-self: flex-start;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  text-align: right;
+  color: #9ca3af;
+}
+
+/* Input box slightly down */
+.message-input {
+  display: flex;
+  border-top: 1px solid #e5e7eb;
+  padding: 0.8rem 1rem;
+  gap: 0.5rem;
+  background-color: var(--bg-color);
+}
+
+.message-input input {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  font-size: 0.9rem;
+  background-color: var(--card-color);
+  color: var(--text-color);
+}
+
+.message-input button {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.message-input button:hover {
+  opacity: 0.9;
+}
+
+/* Scrollbar styling */
+.friends-list::-webkit-scrollbar,
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.friends-list::-webkit-scrollbar-thumb,
+.messages-container::-webkit-scrollbar-thumb {
+  background-color: #a1a1aa;
+  border-radius: 3px;
+}
+
+.friends-list::-webkit-scrollbar-track,
+.messages-container::-webkit-scrollbar-track {
+  background-color: transparent;
+}

@@ -1,0 +1,228 @@
+/* ChatRooms.css - fixed chat window + internal scroll
+   Supports light/dark modes via prefers-color-scheme and .dark on body
+*/
+
+/* ---------- Adjustable variables ---------- */
+:root {
+  --page-top-offset: 56px;      /* controls how far the whole "page" is pushed down */
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --text: #0b1220;
+  --muted: #6b7280;
+  --accent: #4f46e5;
+  --border: rgba(11,17,32,0.06);
+  --sidebar-w: 300px;
+  --chat-window-h: 420px;      /* smaller chat window height (was 600px) */
+  --radius: 10px;
+  --gap: 14px;
+  --transition: 170ms ease;
+}
+
+/* Dark overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #071026;
+    --surface: #071826;
+    --text: #e6eef8;
+    --muted: #9ca3af;
+    --accent: #7c5cff;
+    --border: rgba(255,255,255,0.06);
+  }
+}
+body.dark {
+  --bg: #071026;
+  --surface: #071826;
+  --text: #e6eef8;
+  --muted: #9ca3af;
+  --accent: #7c5cff;
+  --border: rgba(255,255,255,0.06);
+}
+
+/* ---------- Layout ---------- */
+* { box-sizing: border-box; }
+.chatroom-wrapper-fixed {
+  display: flex;
+  gap: var(--gap);
+  padding: calc(var(--page-top-offset) + -10px) 18px 18px; /* page pushed down */
+  min-height: calc(100vh - var(--page-top-offset) - 36px);
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+}
+
+/* Sidebar */
+.chatroom-sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  overflow: auto;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.04);
+}
+.sidebar-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 17px;
+}
+.rooms-list { list-style: none; padding: 0; margin: 0; display:block; }
+.room-item {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--transition), transform var(--transition), border-color var(--transition);
+}
+.room-item:hover { background: rgba(79,70,229,0.04); transform: translateY(-2px); }
+.room-item.active { background: rgba(79,70,229,0.08); border-color: rgba(79,70,229,0.12); }
+.room-row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.room-name { font-weight:600; }
+.room-type { font-size:12px; color:var(--muted); }
+
+/* ---------- Main area (chat window fixed) ---------- */
+.chatroom-main-fixed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.chatroom-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+.chatroom-header h3 { margin:0; font-size:18px; }
+.chatroom-meta { color:var(--muted); font-size:13px; }
+
+/* The fixed chat window box (smaller height) */
+.chat-window-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  height: var(--chat-window-h);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+/* messages area: scroll inside the box */
+.messages-area-fixed {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(180deg, transparent, transparent);
+}
+
+/* message styles */
+.message-row {
+  max-width: 78%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.03);
+  word-break: break-word;
+  font-size: 14px;
+}
+.my-message {
+  margin-left: auto;
+  background: linear-gradient(180deg, rgba(79,70,229,0.10), rgba(79,70,229,0.04));
+  border-color: rgba(79,70,229,0.12);
+  text-align: right;
+}
+.other-message {
+  margin-right: auto;
+  background: var(--surface);
+}
+
+/* meta and body */
+.message-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+.message-user { font-weight:700; font-size:13px; }
+.message-time { font-size:12px; color:var(--muted); }
+.message-body { font-size:14px; color:var(--text); line-height:1.45; }
+
+/* 'no messages' / loading */
+.messages-loading, .no-messages { text-align:center; color: var(--muted); padding: 12px; }
+
+/* new messages pill (above composer) */
+.new-messages-pill {
+  position: absolute;
+  right: 16px;
+  bottom: 68px; /* sits above smaller composer */
+  padding: 7px 12px;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(79,70,229,0.12);
+  z-index: 20;
+  font-weight: 600;
+}
+
+/* composer pinned inside the chat window (smaller) */
+.message-form-fixed {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.00), rgba(255,255,255,0.00));
+}
+.message-form-fixed textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 120px;
+  resize: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
+}
+.message-form-fixed textarea::placeholder { color: var(--muted); }
+
+/* send button */
+.send-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.send-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* no-room selected / error */
+.no-room-selected {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:var(--muted);
+  padding:20px;
+}
+.error-box {
+  margin-top:10px;
+  padding:10px;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.12);
+  color: #ef4444;
+  border-radius: 8px;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .chatroom-wrapper-fixed { padding: calc(var(--page-top-offset)/2) 10px 10px; gap: 10px; flex-direction: column; min-height: auto; }
+  .chatroom-sidebar { width: 100%; max-height: 220px; overflow:auto; }
+  .chat-window-box { width: 100%; height: 420px; } /* keep smaller on mobile too */
+}

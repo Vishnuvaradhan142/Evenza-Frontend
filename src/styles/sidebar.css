@@ -1,0 +1,228 @@
+:root {
+  --sidebar-bg: #e6eafc; /* Light grey for light mode */
+  --sidebar-text: var(--primary-color, #3f3d56);
+  --sidebar-hover: var(--accent-color, #ff6f61);
+  --sidebar-active-bg: #e3e8fd;
+  --sidebar-dot: var(--accent-color, #ff6f61);
+  --topbar-bg: #fff;
+  --topbar-text: #3f3d56;
+}
+
+.sidebar {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: calc(100vh - var(--admin-header-height, 120px));
+  transition: width 0.2s;
+  background: var(--sidebar-bg, #e6eafc);
+  color: var(--sidebar-text, #3f3d56);
+  padding: 0;
+  min-height: 50vh;
+  overflow-x: hidden;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 0.25rem;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.03);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Keep (and increase) padding when expanded */
+.user-sidebar.expanded {
+  padding-top: 0px; /* was 45px */
+}
+
+/* Admin-specific fixed sidebar to overlay from below the fixed header */
+.admin-layout .admin-sidebar {
+  position: fixed;
+  top: var(--admin-header-height, 160px); /* start below admin topbar */
+  left: 0;
+  height: calc(100vh - var(--admin-header-height, 160px)); /* fill remaining height */
+  overflow-y: auto;
+  z-index: 999; /* below fixed header (1000), above content */
+  margin-top: 0; /* reset inherited */
+}
+
+/* Owner-specific fixed sidebar with similar behavior */
+.owner-layout .owner-sidebar {
+  position: fixed;
+  top: var(--owner-header-height, 170px); /* start below owner topbar */
+  left: 0;
+  height: calc(100vh - var(--owner-header-height, 170px)); /* fill remaining height */
+  overflow-y: auto;
+  z-index: 999;
+  margin-top: 0;
+}
+
+.sidebar:hover,
+.sidebar.expanded {
+  width: 220px;
+  padding: 1.5rem 1rem;
+  align-items: flex-start;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sidebar-dot);
+  margin-bottom: 1.5rem;
+  transition: background 2s;
+  opacity: 1;
+}
+
+.sidebar.expanded .sidebar-dot,
+.sidebar:hover .sidebar-dot {
+  background: transparent;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.sidebar li {
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.sidebar li i {
+  margin-right: 12px;
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
+.sidebar li span {
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.sidebar:hover li span {
+  opacity: 1;
+}
+
+.sidebar-item {
+  opacity: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--sidebar-text);
+  font-weight: 500;
+  transition: background 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.sidebar-item:hover {
+  background: var(--sidebar-hover, #ff6f61);
+  color: #fff;
+}
+
+/* Optional: active state for selected item */
+.sidebar-item.active {
+  background: var(--sidebar-active-bg, #e3e8fd);
+  color: var(--primary-color, #3f3d56);
+}
+
+.sidebar.collapsed .sidebar-item {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* For dark theme support */
+[data-theme='dark'] .sidebar {
+  background: var(--card-bg, #1e293b);
+  color: var(--primary-color, #f9f9f9);
+}
+
+[data-theme='dark'] .sidebar-dot {
+  background: var(--accent-color, #f9d89c);
+}
+
+[data-theme='dark'] .sidebar-item {
+  color: var(--primary-color, #f9f9f9);
+}
+
+[data-theme='dark'] .sidebar-item:hover {
+  background: var(--accent-color, #f9d89c);
+  color: #1e3a8a;
+}
+
+[data-theme='dark'] .sidebar-item.active {
+  background: #24304a;
+  color: var(--accent-color, #f9d89c);
+}
+
+.sidebar-hotspot {
+  position: fixed;
+  top: var(--admin-header-height, 160px); /* start below admin topbar */
+  left: 0;
+  width: 8px;
+  height: calc(100vh - var(--admin-header-height, 160px)); /* fill remaining height */
+  background: #d3d3d3;
+  border-radius: 0 4px 4px 0;
+  z-index: 100;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.owner-layout .sidebar-hotspot {
+  top: var(--owner-header-height, 170px); /* start below owner topbar */
+  height: calc(100vh - var(--owner-header-height, 170px)); /* fill remaining height */
+}
+
+.owner-layout .owner-sidebar {
+  top: var(--owner-header-height, 170px); /* start below owner topbar */
+  height: calc(100vh - var(--owner-header-height, 170px)); /* fill remaining height */
+}
+
+.sidebar-hotspot:hover {
+  opacity: 1;
+}
+
+/* User sidebar: ensure extra top padding always applies (expanded/hover) */
+/* Remove padding to eliminate gap */
+.sidebar.user-sidebar,
+.sidebar.user-sidebar:hover {
+  padding-top: 0; /* Remove gap above */
+}
+.sidebar.user-sidebar.expanded {
+  padding-top: 80px; /* decreased significantly when expanded */
+}
+
+/* User sidebar: increase overall height and allow vertical scrolling */
+.sidebar.user-sidebar {
+  position: fixed;      /* pin to the viewport */
+  top: var(--user-header-height, 164px); /* increased slightly from 160px */
+  left: 0;
+  z-index: 999;         /* above page content */
+  height: calc(100vh - var(--user-header-height, 164px)); /* adjusted height */
+  min-height: 0;        /* avoid forcing overlap beyond viewport */
+  overflow-y: auto;     /* scroll if content exceeds height */
+  gap: 0; /* Eliminate spacing between child elements */
+}
+
+.sidebar.user-sidebar ul {
+  margin: 0; /* Remove margin */
+  padding: 0; /* Remove padding */
+}
+
+.sidebar.user-sidebar li {
+  margin: 0; /* Remove margin from list items */
+  padding: 0; /* Remove padding from list items */
+}
+
+.sidebar.user-sidebar.expanded {
+  padding-top: 0; /* Ensure no padding above when expanded */
+}

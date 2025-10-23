@@ -1,0 +1,49 @@
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #6a4c93;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease-in-out;
+  z-index: 2000;
+}
+
+.toast .icon {
+  font-size: 1.2rem;
+}
+
+.toast .event::before {
+  content: "🎉";
+}
+
+.toast .alert::before {
+  content: "⚠️";
+}
+
+.toast .info::before {
+  content: "ℹ️";
+}
+
+.slide-in {
+  transform: translateX(0);
+}
+
+.slide-out {
+  animation: fadeOut 0.4s forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(20px); }
+}

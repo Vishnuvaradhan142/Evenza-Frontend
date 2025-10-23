@@ -1,0 +1,86 @@
+:root {
+  --accent-color: #6c63ff;
+  --accent-hover: #574b90;
+  --topbar-bg: #e6eafc; /* ← Light topbar background */
+  --topbar-text: #3f3d56;
+}
+
+[data-theme="dark"] {
+  --accent-color: #f9d89c;
+  --accent-hover: #ffe8b0;
+  --topbar-bg: #1e293b;
+  --topbar-text: #f9f9f9;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+    background: var(--topbar-bg);
+  color: var(--topbar-text);
+  padding: 0.5rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky; /* keep topbar visible and above sidebar */
+  top: 0;
+  z-index: 1100; /* higher than sidebar (999) */
+}
+
+.topbar-left {
+  flex: 1;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex: 2;
+}
+
+.topbar-nav button {
+  background: none;
+  border: none;
+  margin: 0;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--topbar-text);
+  transition: color 0.3s ease;
+}
+
+.topbar-nav button:hover {
+  color: var(--accent-color);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/* Stylish pill-shaped Profile & Logout buttons */
+.topbar-right button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.topbar-right button:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Dark theme override */
+[data-theme='dark'] .topbar-right button {
+  background-color: var(--accent-color);
+  color: #1e293b;
+}
+
+[data-theme='dark'] .topbar-right button:hover {
+  background-color: var(--accent-hover);
+  color: #1e293b;
+}
