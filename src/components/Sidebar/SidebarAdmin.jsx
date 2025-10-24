@@ -7,9 +7,9 @@ const menuMap = {
   event: [
     { label: "Add Event", path: "event/newevent" },
     { label: "Duplicate Event", path: "event/template" },
-    { label: "Submit Event", path: "management/event-submission" },
+    { label: "Submit Event", path: "event/event-submission" },
     { label: "My Events", path: "event/manage" },
-    { label: "Documents Upload", path: "management/documents" } // Moved back to event category
+    { label: "Documents Upload", path: "event/documents" } // Moved back to event category
   ],
   // Event Management (renamed from Attendee Management in topbar)
   management: [

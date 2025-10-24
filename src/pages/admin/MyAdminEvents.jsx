@@ -1,219 +1,98 @@
-import React, { useEffect, useState } from "react";
-// No page navigation for view/edit; use in-place modals
-import {
-  FiCalendar,
-  FiMapPin,
-  FiUsers,
-  FiDollarSign,
-  FiEdit2,
-  FiTrash2,
-  FiEye,
-} from "react-icons/fi";
-import "./MyAdminEvents.css";
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FiSearch, FiEye, FiSend, FiX } from "react-icons/fi";
+import "./AdminEventsList.css";
 
-export default function MyAdminEvents() {
-  const [events, setEvents] = useState([]);
-  const [previewEvent, setPreviewEvent] = useState(null);
-  const [editEvent, setEditEvent] = useState(null);
+const MOCK_EVENTS = [
+  { id: "E-101", name: "Tech Conference 2025", category: "Technology", date: "2025-03-15", status: "Approved", createdBy: "Priya" },
+  { id: "E-102", name: "Art Exhibition Opening", category: "Arts & Culture", date: "2025-04-10", status: "Pending", createdBy: "Manoj" },
+  { id: "E-103", name: "Business Workshop Series", category: "Business", date: "2025-05-20", status: "Draft", createdBy: "Aisha" },
+  { id: "E-104", name: "Design Sprint", category: "Design", date: "2025-02-12", status: "Rejected", createdBy: "Rahul" },
+  { id: "E-105", name: "TechFest Hackathon", category: "Technology", date: "2025-01-25", status: "Approved", createdBy: "Karan" },
+];
 
-  useEffect(() => {
-    setEvents([
-      {
-        id: 1,
-        name: "TechNova Hackathon 2025",
-        date: "2025-10-18",
-        location: "Innovation Hub",
-        image: "https://source.unsplash.com/600x400/?hackathon,tech",
-        registrations: 260,
-        revenue: 18000,
-        status: "Upcoming",
-      },
-      {
-        id: 2,
-        name: "Annual Cultural Extravaganza",
-        date: "2025-09-28",
-        location: "Main Auditorium",
-        image: "https://source.unsplash.com/600x400/?concert,crowd",
-        registrations: 420,
-        revenue: 24000,
-        status: "Ongoing",
-      },
-      {
-        id: 3,
-        name: "Sports Meet & Athletics",
-        date: "2025-08-21",
-        location: "College Stadium",
-        image: "https://source.unsplash.com/600x400/?sports,stadium",
-        registrations: 520,
-        revenue: 30000,
-        status: "Completed",
-      },
-      {
-        id: 4,
-        name: "Startup Pitch Fest",
-        date: "2025-11-02",
-        location: "Entrepreneurship Cell",
-        image: "https://source.unsplash.com/600x400/?startup,presentation",
-        registrations: 180,
-        revenue: 20000,
-        status: "Upcoming",
-      },
-      {
-        id: 5,
-        name: "Photography Masterclass",
-        date: "2025-09-20",
-        location: "Studio Lab",
-        image: "https://source.unsplash.com/600x400/?photography,class",
-        registrations: 95,
-        revenue: 5000,
-        status: "Ongoing",
-      },
-      {
-        id: 6,
-        name: "AI & Robotics Expo",
-        date: "2025-12-01",
-        location: "Tech Pavilion",
-        image: "https://source.unsplash.com/600x400/?robotics,ai",
-        registrations: 300,
-        revenue: 35000,
-        status: "Upcoming",
-      },
-    ]);
-  }, []);
+export default function AllEventsAdmin() {
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState(null);
 
-  const statusColors = {
-    Upcoming: "#f59e0b",
-    Ongoing: "#3b82f6",
-    Completed: "#10b981",
-    Cancelled: "#ef4444",
-  };
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let rows = MOCK_EVENTS.filter((e) =>
+      [e.name, e.category, e.createdBy, e.id].some((f) => f.toLowerCase().includes(q))
+    );
+    // Default sort: newest first by date
+    rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return rows;
+  }, [query]);
 
-  const handleView = (ev) => setPreviewEvent(ev);
-  const handleEdit = (ev) => setEditEvent(ev);
-
-  const handleDelete = (id) => {
-    // Simple client-side delete demo; replace with API call if needed
-    const ok = window.confirm("Delete this event?");
-    if (!ok) return;
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-  };
+  // Sorting controls removed; using fixed date-desc order in the memo above.
 
   return (
-    <div className="admin-events-wrapper">
-      <div className="admin-events-header" style={{ textAlign: 'center' }}>
-        <h2 className="admin-events-title page-title"><FiCalendar /> My Events</h2>
-        <p className="admin-events-sub">All college events you manage</p>
+    <div className="admin-events-table-page">
+      <header className="aelp-header">
+        <h1 className="aelp-title">All Events</h1>
+        <p className="aelp-desc">Browse and manage events across all statuses.</p>
+      </header>
+
+      <div className="aelp-toolbar">
+        <div className="aelp-search">
+          <FiSearch />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, category, owner or ID"
+          />
+        </div>
+        {/* status filter removed as requested */}
+        <div className="aelp-actions">
+          <Link to="/admin/management/event-submission" className="btn primary">
+            <FiSend /> Go to Event Submission
+          </Link>
+        </div>
       </div>
 
-      {events.length === 0 ? (
-        <div className="empty-events">No events yet. Create one to get started.</div>
+      {/* Full-width responsive grid replacing the table */}
+      {filtered.length === 0 ? (
+        <div className="empty">No events found</div>
       ) : (
-        <div className="events-grid">
-          {events.map((ev) => (
-            <div className="event-card" key={ev.id}>
-              <div className="event-image-wrapper">
-                <img src={ev.image} alt={ev.name} className="event-image" />
-                <span
-                  className="event-status"
-                  style={{ backgroundColor: statusColors[ev.status] }}
-                >
-                  {ev.status}
-                </span>
+        <div className="aelp-grid">
+          {filtered.map((e) => (
+            <div className="aelp-card" key={e.id}>
+              <div className="aelp-card__head">
+                <span className={`pill status ${e.status.toLowerCase()}`}>{e.status}</span>
               </div>
-              <div className="event-body">
-                <h3 className="event-name">{ev.name}</h3>
-                <div className="event-info">
-                  <FiCalendar /> {new Date(ev.date).toDateString()}
+              <div className="aelp-card__body">
+                <h3 className="aelp-card__title">{e.name}</h3>
+                <div className="aelp-card__meta">
+                  <span className="meta"><strong>Category:</strong> {e.category}</span>
+                  <span className="meta"><strong>Date:</strong> {new Date(e.date).toLocaleDateString()}</span>
+                  <span className="meta"><strong>Owner:</strong> {e.createdBy}</span>
                 </div>
-                <div className="event-info">
-                  <FiMapPin /> {ev.location}
-                </div>
-                <div className="event-stats">
-                  <span>
-                    <FiUsers /> {ev.registrations}
-                  </span>
-                  <span>
-                    <FiDollarSign /> ₹{ev.revenue.toLocaleString()}
-                  </span>
-                </div>
-                <div className="event-actions">
-                  <button type="button" className="btn view" onClick={() => handleView(ev)} aria-label={`View ${ev.name}`}>
-                    <FiEye /> View
-                  </button>
-                  {(["Upcoming", "Ongoing"].includes(ev.status)) && (
-                    <button type="button" className="btn edit" onClick={() => handleEdit(ev)} aria-label={`Edit ${ev.name}`}>
-                      <FiEdit2 /> Edit
-                    </button>
-                  )}
-                  <button type="button" className="btn delete" onClick={() => handleDelete(ev.id)} aria-label={`Delete ${ev.name}`}>
-                    <FiTrash2 /> Delete
-                  </button>
-                </div>
+              </div>
+              <div className="aelp-card__actions">
+                <button className="btn" title="View details" onClick={() => setView(e)}><FiEye /> View</button>
+                <Link to="/admin/management/event-submission" className="btn primary" title="Submit"><FiSend /> Submit</Link>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* View Modal */}
-      {previewEvent && (
-        <div className="ae-modal" role="dialog" aria-modal="true">
-          <div className="ae-modal__backdrop" onClick={() => setPreviewEvent(null)} />
-          <div className="ae-modal__panel">
-            <div className="ae-modal__header">
-              <h3>Preview: {previewEvent.name}</h3>
-              <button className="ae-modal__close" onClick={() => setPreviewEvent(null)} aria-label="Close preview">✕</button>
+      {view && (
+        <div className="events-modal" onClick={() => setView(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{view.name}</h3>
+              <button className="modal-close" onClick={() => setView(null)} aria-label="Close"><FiX /></button>
             </div>
-            <div className="ae-modal__body">
-              <img src={previewEvent.image} alt={previewEvent.name} className="ae-modal__image" />
-              <ul className="ae-modal__list">
-                <li><strong>Date:</strong> {new Date(previewEvent.date).toDateString()}</li>
-                <li><strong>Location:</strong> {previewEvent.location}</li>
-                <li><strong>Registrations:</strong> {previewEvent.registrations}</li>
-                <li><strong>Revenue:</strong> ₹{previewEvent.revenue.toLocaleString()}</li>
-                <li><strong>Status:</strong> {previewEvent.status}</li>
-              </ul>
+            <div className="modal-body">
+              <div className="modal-row"><span className="muted">Category</span><span>{view.category}</span></div>
+              <div className="modal-row"><span className="muted">Date</span><span>{new Date(view.date).toLocaleDateString()}</span></div>
+              <div className="modal-row"><span className="muted">Status</span><span className={`pill status ${view.status.toLowerCase()}`}>{view.status}</span></div>
+              <div className="modal-row"><span className="muted">Created By</span><span>{view.createdBy}</span></div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editEvent && (
-        <div className="ae-modal" role="dialog" aria-modal="true">
-          <div className="ae-modal__backdrop" onClick={() => setEditEvent(null)} />
-          <div className="ae-modal__panel">
-            <div className="ae-modal__header">
-              <h3>Edit Event</h3>
-              <button className="ae-modal__close" onClick={() => setEditEvent(null)} aria-label="Close edit">✕</button>
-            </div>
-            <div className="ae-modal__body">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // apply minimal updates
-                  setEvents((prev) => prev.map((ev) => (ev.id === editEvent.id ? editEvent : ev)));
-                  setEditEvent(null);
-                }}
-                className="ae-form"
-              >
-                <label>
-                  Name
-                  <input value={editEvent.name} onChange={(e) => setEditEvent({ ...editEvent, name: e.target.value })} />
-                </label>
-                <label>
-                  Date
-                  <input type="date" value={editEvent.date} onChange={(e) => setEditEvent({ ...editEvent, date: e.target.value })} />
-                </label>
-                <label>
-                  Location
-                  <input value={editEvent.location} onChange={(e) => setEditEvent({ ...editEvent, location: e.target.value })} />
-                </label>
-                <div className="ae-form__actions">
-                  <button type="button" className="btn" onClick={() => setEditEvent(null)}>Cancel</button>
-                  <button type="submit" className="btn edit">Save</button>
-                </div>
-              </form>
+            <div className="modal-actions">
+              <Link to="/admin/management/event-submission" className="btn primary"><FiSend /> Go to Event Submission</Link>
             </div>
           </div>
         </div>

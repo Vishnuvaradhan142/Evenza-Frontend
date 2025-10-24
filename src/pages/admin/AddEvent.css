@@ -280,15 +280,22 @@ body[data-theme='dark'] .checkbox input { accent-color: #a855f7; }
 }
 
 .remove-btn { 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #fee2e2, #fecaca); 
   color: #991b1b; 
   border: 1px solid rgba(254, 202, 202, 0.8); 
-  border-radius: 12px; 
-  padding: 8px 16px; 
+  border-radius: 999px; 
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
   font-weight: 700; 
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.85rem;
+  font-size: 1.1rem; /* icon size */
+  line-height: 1;
 }
 
 .remove-btn:hover { 
@@ -439,9 +446,25 @@ body[data-theme='dark'] .location-card .location-row input::placeholder {
 .session-card.dragging { border-color: #8b5cf6; box-shadow: 0 12px 32px rgba(99,102,241,0.25); }
 
 /* Purple pill remove button variant to match screenshot */
-.remove-btn.accent { background: linear-gradient(135deg, #5b5bf7 0%, #6d28d9 100%); color: #ffffff; border: none; border-radius: 999px; padding: .5rem 1rem; font-weight: 700; box-shadow: 0 12px 24px rgba(99,102,241,0.35); }
+.remove-btn.accent { 
+  background: linear-gradient(135deg, #5b5bf7 0%, #6d28d9 100%); 
+  color: #ffffff; 
+  border: none; 
+  border-radius: 999px; 
+  width: 40px; 
+  height: 40px; 
+  min-height: 40px; 
+  padding: 0; 
+  font-weight: 700; 
+  box-shadow: 0 12px 24px rgba(99,102,241,0.35); 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+}
 .remove-btn.accent:hover { filter: brightness(1.02); box-shadow: 0 14px 28px rgba(99,102,241,0.4); }
 body[data-theme='dark'] .remove-btn.accent { background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%); color: #fff; box-shadow: 0 12px 24px rgba(168, 85, 247, 0.35); }
+
+.remove-btn svg { width: 18px; height: 18px; }
 
 /* Dark theme adjustments for session card */
 body[data-theme='dark'] .session-card { background: var(--card-bg, #1e293b); border-color: #334155; box-shadow: 0 8px 24px rgba(2, 6, 23, 0.5); }
