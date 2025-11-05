@@ -38,20 +38,17 @@ import DuplicateTemplate from "../pages/admin/DuplicateTemplate";
 import ScheduleManager from "../pages/admin/ScheduleManager";
 import FAQsManager from "../pages/admin/FAQsManager";
 import Registrations from "../pages/admin/Registrations";
-import ChatParticipants from "../pages/admin/ChatParticipants";
+// Removed: ChatParticipants
 import Announcements from "../pages/admin/Announcements";
 import DocumentsUpload from "../pages/admin/DocumentsUpload";
 import EventSubmission from "../pages/admin/EventSubmission";
-import PaymentDashboard from "../pages/admin/PaymentDashboard";
-import RegistrationFormDesigner from "../pages/admin/RegistrationFormDesigner";
-import TicketScanner from "../pages/admin/TicketScanner";
+// Removed: PaymentDashboard, TicketScanner
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminAnalytics from "../pages/admin/AdminAnalytics";
 import AllEventsAdmin from "../pages/admin/AllEventsAdmin";
 import RejectedEvents from "../pages/admin/RejectedEvents";
 import FeedbackRatings from "../pages/admin/FeedbackRatings";
-import CollaboratorAccess from "../pages/admin/CollaboratorAccess";
-import ReportCenter from "../pages/admin/ReportCenter";
+// Removed: CollaboratorAccess, ReportCenter
 import AdminProfile from "../pages/admin/AdminProfile";
 import AdminNotifications from "../pages/admin/AdminNotifications";
 
@@ -134,8 +131,7 @@ const AppRoutes = () => {
         >
           <Route index element={<Navigate to="analytics/dashboard" replace />} />
 
-          {/* Direct collaborators shortcut */}
-          <Route path="collaborators" element={<CollaboratorAccess />} />
+          {/* collaborators route removed */}
 
           {/* EVENT */}
           <Route path="event">
@@ -151,15 +147,10 @@ const AppRoutes = () => {
             <Route path="tracking" element={<Registrations />} />
             <Route path="announcements" element={<Announcements />} />
             <Route path="configuration" element={<FAQsManager />} />
-            <Route path="communication" element={<ChatParticipants />} />
-            <Route path="registration-designer" element={<RegistrationFormDesigner />} />
+            {/* communication removed */}
           </Route>
 
-            {/* CONTROL */}
-            <Route path="control">
-              <Route path="payment" element={<PaymentDashboard />} />
-              <Route path="scanner" element={<TicketScanner />} />
-            </Route>
+            {/* CONTROL removed */}
 
             {/* ANALYTICS */}
             <Route path="analytics">
@@ -171,11 +162,7 @@ const AppRoutes = () => {
               <Route path="rejected" element={<RejectedEvents />} />
             </Route>
 
-            {/* SUPPORT */}
-            <Route path="support">
-              <Route path="access" element={<CollaboratorAccess />} />
-              <Route path="center" element={<ReportCenter />} />
-            </Route>
+            {/* SUPPORT removed */}
 
             {/* PROFILE */}
             <Route path="profile" element={<AdminProfile />} />

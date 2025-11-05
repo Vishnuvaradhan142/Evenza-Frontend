@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import API from "../../api";
 import {
   FiUpload,
   FiFileText,
@@ -59,24 +60,29 @@ function typeFromExt(ext) {
 }
 
 export default function DocumentsUpload() {
-  const [items, setItems] = useState([]); // {id, file, name, size, ext, type, status, progress, error}
+  const [items, setItems] = useState([]); // {id, file, name, size, ext, type, status, progress, error, draftId, draftTitle}
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef(null);
   const timersRef = useRef(new Map());
   const [selectedIds, setSelectedIds] = useState(() => new Set());
-  const EVENT_OPTIONS = useMemo(() => [
-    "Orientation Week",
-    "Tech Expo",
-    "App Launch",
-    "Volunteer Drive",
-    "Safety Workshop",
-    "General",
-  ], []);
-  const [selectedEvent, setSelectedEvent] = useState("General");
-  const [filterEvent, setFilterEvent] = useState("All Events");
+  const [drafts, setDrafts] = useState([]); // from /drafts/mine?status=draft
+  const [draftsLoading, setDraftsLoading] = useState(false);
+  const [draftsErr, setDraftsErr] = useState("");
+  const [selectedDraftId, setSelectedDraftId] = useState("");
+  const [selectedDocs, setSelectedDocs] = useState([]); // current draft documents
+  const serverBase = useMemo(() => (API.defaults?.baseURL || '').replace(/\/api\/?$/, ''), []);
+  const urlFor = (p) => {
+    if (!p) return '';
+    if (/^https?:\/\//i.test(p)) return p;
+    return `${serverBase}${p}`;
+  };
   const [preview, setPreview] = useState({ open: false, mode: "none", url: "", text: "", name: "", file: null });
   const docxContainerRef = useRef(null);
   const [zoom, setZoom] = useState(1);
+  // Files awaiting user-provided names before being added to the upload queue
+  const [pendingFiles, setPendingFiles] = useState([]); // array of File
+  const [pendingNames, setPendingNames] = useState({}); // map fileKey -> name
+  const pendingFirstRef = useRef(null);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -89,33 +95,128 @@ export default function DocumentsUpload() {
 
   const onBrowse = () => inputRef.current?.click();
 
+  // Load drafts with status=draft
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        setDraftsLoading(true);
+        setDraftsErr("");
+        const res = await API.get('/drafts/mine', { params: { status: 'draft', limit: 100 } });
+        const list = Array.isArray(res.data) ? res.data : [];
+        if (!ignore) {
+          setDrafts(list);
+          // default select first draft if none selected
+          if (!selectedDraftId && list.length > 0) setSelectedDraftId(String(list[0].draft_id));
+        }
+      } catch (e) {
+        if (!ignore) setDraftsErr(e?.response?.data?.message || e.message || 'Failed to load drafts');
+      } finally {
+        if (!ignore) setDraftsLoading(false);
+      }
+    })();
+    return () => { ignore = true; };
+  }, []);
+
+  // Load documents of selected draft
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      if (!selectedDraftId) { setSelectedDocs([]); return; }
+      try {
+        const res = await API.get(`/drafts/${selectedDraftId}`);
+        const d = res.data || {};
+        // documents now come as [{ path, name }]
+        const docs = Array.isArray(d.documents) ? d.documents : [];
+        if (!ignore) setSelectedDocs(docs);
+      } catch { if (!ignore) setSelectedDocs([]); }
+    })();
+    return () => { ignore = true; };
+  }, [selectedDraftId]);
+
+  // Added a prompt to ask for a name before uploading files
+  // Instead of prompting, store incoming files in `pendingFiles` and show a modal
+  // so the user can provide friendly names before they are added to the queue.
   const addFiles = useCallback((fileList) => {
     const incoming = Array.from(fileList || []);
     if (!incoming.length) return;
-    setItems((prev) => {
-      const existingKeys = new Set(prev.map((p) => `${p.name}|${p.size}|${p.event || ""}`));
+    if (!selectedDraftId) return;
+    // Filter unsupported and duplicates against current items
+    setPendingFiles((prev) => {
+      const existingKeys = new Set(items.map((p) => `${p.name}|${p.size}|${p.draftId || ""}`));
       const next = [...prev];
       for (const file of incoming) {
         const ext = extFromName(file.name);
-        if (!ACCEPTED_EXTS.includes(ext)) continue; // skip unsupported types
-        const key = `${file.name}|${file.size}|${selectedEvent}`;
-        if (existingKeys.has(key)) continue; // prevent duplicates
+        if (!ACCEPTED_EXTS.includes(ext)) continue;
+        const key = `${file.name}|${file.size}|${selectedDraftId}`;
+        if (existingKeys.has(key)) continue;
+        // avoid duplicates in pendingFiles by checking file.name+size
+        if (next.some(f => f.name === file.name && f.size === file.size)) continue;
+        next.push(file);
+      }
+      // initialize pendingNames for the newly added files
+      setPendingNames((prevNames) => {
+        const names = { ...prevNames };
+        for (const f of next) {
+          const k = `${f.name}|${f.size}`;
+          if (!names[k]) names[k] = f.name;
+        }
+        return names;
+      });
+      return next;
+    });
+  }, [selectedDraftId, items]);
+
+  const cancelPending = () => {
+    setPendingFiles([]);
+    setPendingNames({});
+  };
+
+  // autofocus first input when modal opens
+  useEffect(() => {
+    if (pendingFiles.length > 0) {
+      setTimeout(() => {
+        try { pendingFirstRef.current?.focus(); } catch (_) {}
+      }, 50);
+    }
+  }, [pendingFiles]);
+
+  const confirmPending = () => {
+    if (!pendingFiles.length) return;
+    const label = (() => {
+      const d = drafts.find(x => String(x.draft_id) === String(selectedDraftId));
+      return d ? (d.title || `Draft #${d.draft_id}`) : `Draft #${selectedDraftId}`;
+    })();
+    setItems((prev) => {
+      const existingKeys = new Set(prev.map((p) => `${p.name}|${p.size}|${p.draftId || ""}`));
+      const next = [...prev];
+      for (const file of pendingFiles) {
+        const ext = extFromName(file.name);
+        if (!ACCEPTED_EXTS.includes(ext)) continue;
+        const key = `${file.name}|${file.size}|${selectedDraftId}`;
+        if (existingKeys.has(key)) continue;
+        const nameKey = `${file.name}|${file.size}`;
+        const friendly = (pendingNames[nameKey] || file.name).trim() || file.name;
         next.push({
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           file,
-          name: file.name,
+          name: friendly,
           size: file.size,
           ext,
           type: typeFromExt(ext),
           status: "Ready",
           progress: 0,
           error: "",
-          event: selectedEvent,
+          draftId: String(selectedDraftId),
+          draftTitle: label,
         });
       }
       return next;
     });
-  }, [selectedEvent]);
+    // clear pending
+    setPendingFiles([]);
+    setPendingNames({});
+  };
 
   const handleInput = (e) => {
     addFiles(e.target.files);
@@ -141,33 +242,36 @@ export default function DocumentsUpload() {
     setIsDragging(false);
   };
 
-  const startUpload = (id) => {
-    setItems((prev) =>
-      prev.map((it) =>
-        it.id === id
-          ? { ...it, status: "Uploading", progress: 0, error: "" }
-          : it
-      )
-    );
-    const t = setInterval(() => {
-      setItems((prev) => {
-        const it = prev.find((x) => x.id === id);
-        if (!it || it.status !== "Uploading") return prev;
-        const bump = Math.min(100, it.progress + Math.floor(Math.random() * 15) + 5);
-        const updated = prev.map((row) =>
-          row.id === id ? { ...row, progress: bump } : row
-        );
-        if (bump >= 100) {
-          clearInterval(t);
-          timersRef.current.delete(id);
-          return updated.map((row) =>
-            row.id === id ? { ...row, status: "Uploaded" } : row
-          );
+  const startUpload = async (id) => {
+    const current = items.find((x) => x.id === id);
+    if (!current) return;
+    if (!current.draftId) {
+      setItems((prev) => prev.map(it => it.id === id ? { ...it, status: 'Error', error: 'Select a draft to upload' } : it));
+      return;
+    }
+    setItems((prev) => prev.map(it => it.id === id ? { ...it, status: 'Uploading', progress: 0, error: '' } : it));
+    try {
+      const fd = new FormData();
+      fd.append('files', current.file);
+      // include optional friendly name (default to file name)
+      fd.append('names', current.name || current.file.name);
+      await API.post(`/drafts/${current.draftId}/documents`, fd, {
+        onUploadProgress: (evt) => {
+          if (!evt.total) return;
+          const pct = Math.round((evt.loaded * 100) / evt.total);
+          setItems((prev) => prev.map(it => it.id === id ? { ...it, progress: pct } : it));
         }
-        return updated;
       });
-    }, 350);
-    timersRef.current.set(id, t);
+      setItems((prev) => prev.map(it => it.id === id ? { ...it, status: 'Uploaded', progress: 100 } : it));
+      // Refresh selected draft docs
+      try {
+        const r = await API.get(`/drafts/${current.draftId}`);
+        const d = r.data || {};
+        setSelectedDocs(Array.isArray(d.documents) ? d.documents : []);
+      } catch {}
+    } catch (e) {
+      setItems((prev) => prev.map(it => it.id === id ? { ...it, status: 'Error', error: e?.response?.data?.message || e.message || 'Upload failed' } : it));
+    }
   };
 
   const uploadAll = () => {
@@ -197,13 +301,9 @@ export default function DocumentsUpload() {
   const uploadedCount = useMemo(() => items.filter((i) => i.status === "Uploaded").length, [items]);
   const selectedCount = selectedIds.size;
 
-  const presentEvents = useMemo(
-    () => Array.from(new Set(items.map((i) => i.event).filter(Boolean))),
-    [items]
-  );
   const filteredItems = useMemo(
-    () => items.filter((i) => filterEvent === "All Events" || i.event === filterEvent),
-    [items, filterEvent]
+    () => items.filter((i) => !selectedDraftId || i.draftId === selectedDraftId),
+    [items, selectedDraftId]
   );
 
   const toggleSelect = (id) => {
@@ -333,18 +433,21 @@ export default function DocumentsUpload() {
           <h1 className="page-title">
             <FiUpload /> Documents Upload
           </h1>
-          <p className="subtitle">Upload and manage event documents (frontend-only).</p>
+          <p className="subtitle">Upload and manage draft documents (PDF, Word, etc.).</p>
         </div>
       </header>
 
       <section className="docs-actions">
         <div className="event-select" role="group" aria-label="Upload target event">
-          <label htmlFor="event-select">Upload to event:</label>
-          <select id="event-select" value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)}>
-            {EVENT_OPTIONS.map((ev) => (
-              <option key={ev} value={ev}>{ev}</option>
+          <label htmlFor="event-select">Upload to draft:</label>
+          <select id="event-select" value={selectedDraftId} onChange={(e) => setSelectedDraftId(e.target.value)}>
+            {draftsLoading && <option>Loading…</option>}
+            {!draftsLoading && drafts.length === 0 && <option value="">No draft events</option>}
+            {!draftsLoading && drafts.map((d) => (
+              <option key={d.draft_id} value={String(d.draft_id)}>{d.title || `Untitled draft`} (#{d.draft_id})</option>
             ))}
           </select>
+          {draftsErr && <div className="alert error" style={{ marginTop: 8 }}>{draftsErr}</div>}
         </div>
         <div
           className={`dropzone ${isDragging ? "dragging" : ""}`}
@@ -372,6 +475,45 @@ export default function DocumentsUpload() {
             <div className="muted">Accepted: {ACCEPTED_EXTS.join(", ")}</div>
           </div>
         </div>
+        {pendingFiles.length > 0 && (
+          <div className="docs-modal docs-modal--small" role="dialog" aria-modal="true" onClick={cancelPending}>
+            <div className="docs-modal__panel" onClick={(e) => e.stopPropagation()}>
+              <div className="docs-modal__header">
+                <h3 className="docs-modal__title">Name files before adding</h3>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="icon-btn" onClick={cancelPending} aria-label="Close"><FiX /></button>
+                </div>
+              </div>
+              <div className="docs-modal__body">
+                <div style={{ maxHeight: 300, overflow: 'auto' }}>
+                  {pendingFiles.map((f, idx) => {
+                    const k = `${f.name}|${f.size}`;
+                    return (
+                      <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600 }}>{f.name}</div>
+                          <input
+                            ref={idx === 0 ? pendingFirstRef : undefined}
+                            type="text"
+                            value={pendingNames[k] || ''}
+                            onChange={(e) => setPendingNames((prev) => ({ ...prev, [k]: e.target.value }))}
+                            placeholder="Friendly name for this document"
+                            style={{ width: '100%', padding: '6px 8px', marginTop: 6 }}
+                          />
+                        </div>
+                        <div style={{ whiteSpace: 'nowrap', color: 'var(--muted,#666)' }}>{bytesToSize(f.size)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+                  <button className="btn" onClick={cancelPending}>Cancel</button>
+                  <button className="btn primary" onClick={() => { confirmPending(); }}>Add files</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="docs-buttons">
           <button className="btn primary" onClick={uploadAll} disabled={!items.length || anyUploading}>
             <FiUpload /> Upload All
@@ -386,15 +528,6 @@ export default function DocumentsUpload() {
             <span className="badge">Selected: {selectedCount}</span>
             <span className="badge success">Uploaded: {uploadedCount}</span>
           </div>
-        </div>
-        <div className="filter-select" role="group" aria-label="Filter by event">
-          <label htmlFor="filter-select">Filter by event:</label>
-          <select id="filter-select" value={filterEvent} onChange={(e) => setFilterEvent(e.target.value)}>
-            <option>All Events</option>
-            {presentEvents.map((ev) => (
-              <option key={ev} value={ev}>{ev}</option>
-            ))}
-          </select>
         </div>
       </section>
 
@@ -422,7 +555,7 @@ export default function DocumentsUpload() {
                 />
               </th>
               <th>File</th>
-              <th>Event</th>
+              <th>Draft</th>
               <th>Type</th>
               <th>Size</th>
               <th>Status</th>
@@ -455,7 +588,7 @@ export default function DocumentsUpload() {
                       </div>
                     </div>
                   </td>
-                  <td>{it.event}</td>
+                  <td>{it.draftTitle || `#${it.draftId}`}</td>
                   <td>{it.type}</td>
                   <td>{bytesToSize(it.size)}</td>
                   <td>
@@ -501,6 +634,52 @@ export default function DocumentsUpload() {
             )}
           </tbody>
         </table>
+      </section>
+
+      {/* Existing documents for selected draft */}
+      <section className="docs-existing" style={{ marginTop: 24 }}>
+        <h3>Existing Documents</h3>
+        {!selectedDraftId && <div className="help">Select a draft to view its documents.</div>}
+        {selectedDraftId && selectedDocs.length === 0 && <div className="help">No documents uploaded yet.</div>}
+        {selectedDraftId && selectedDocs.length > 0 && (
+          <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0', display: 'grid', gap: 8 }}>
+            {selectedDocs.map((doc, idx) => {
+              const ext = extFromName(doc.path || "");
+              const canPreview = [".jpg",".jpeg",".png",".gif",".webp",".svg",".pdf"].includes(ext);
+              return (
+                <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border,#e3e3e3)', borderRadius: 8, padding: '8px 12px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="muted">Event:</span>
+                      <span>{(drafts.find(d=> String(d.draft_id)===String(selectedDraftId))?.title) || `Draft #${selectedDraftId}`}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <div style={{ width: '60%', padding: '6px 8px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.name || ''}</div>
+                      <a href={urlFor(doc.path)} target="_blank" rel="noreferrer" className="muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.path}</a>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn" onClick={()=>{
+                      if (!canPreview) { window.open(urlFor(doc.path), '_blank'); return; }
+                      const url = urlFor(doc.path);
+                      const mode = ext === '.pdf' ? 'pdf' : 'image';
+                      setPreview({ open: true, mode, url, text: '', name: doc.name || doc.path, file: null });
+                      setZoom(1);
+                    }}><FiEye /> View</button>
+                    <button className="btn secondary" onClick={async () => {
+                      try {
+                        await API.delete(`/drafts/${selectedDraftId}/documents`, { data: { path: doc.path } });
+                        setSelectedDocs((prev) => prev.filter((x) => String(x.path) !== String(doc.path)));
+                      } catch (e) {
+                        alert(e?.response?.data?.message || e.message || 'Failed to delete document');
+                      }
+                    }}><FiTrash2 /> Delete</button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       {preview.open && (

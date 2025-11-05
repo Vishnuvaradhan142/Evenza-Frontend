@@ -103,3 +103,36 @@
   .docs-header .page-title { font-size: 24px; }
   .file-cell .name { max-width: 220px; }
 }
+
+/* Compact modal variant used for small popups (e.g. naming pending files) */
+.docs-modal--small .docs-modal__panel {
+  width: min(720px, 92vw);
+  max-height: 72vh;
+  height: auto;
+  border-radius: 12px;
+  padding: 0;
+}
+.docs-modal--small .docs-modal__header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.docs-modal--small .docs-modal__title { font-size: 16px; }
+.docs-modal--small .docs-modal__body { padding: 12px; gap: 12px; }
+.docs-modal--small .docs-modal__body > div { width: 100%; }
+.docs-modal--small input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in oklab, var(--glass-bg) 95%, #fff);
+  color: var(--txt);
+  width: 100%;
+  box-sizing: border-box;
+}
+.docs-modal--small .docs-modal__body .btn { padding: 8px 12px; border-radius: 8px; }
+.docs-modal--small .docs-modal__body .btn.primary { padding: 8px 14px; }
+.docs-modal--small .docs-modal__body { overflow: auto; }
+
+@media (max-width: 480px) {
+  .docs-modal--small .docs-modal__panel { width: calc(100vw - 32px); max-height: 80vh; }
+  .docs-modal--small .docs-modal__body { padding: 10px; }
+}

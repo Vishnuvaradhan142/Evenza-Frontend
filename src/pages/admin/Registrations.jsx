@@ -1,58 +1,54 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
 import './Registrations.css';
 import { 
   FiSearch, FiFilter, FiDownload, FiCheckCircle, FiXCircle, FiMail, FiClock, FiTrash2, FiRefreshCw, FiUsers
 } from 'react-icons/fi';
+import API from '../../api';
+import { NotificationContext } from '../../context/NotificationContext';
 
 const STATUSES = ['confirmed', 'pending', 'cancelled', 'waitlisted'];
 
-function makeMockData() {
-  const events = [
-    { id: 101, title: 'AI Workshop' },
-    { id: 102, title: 'TechFest Hackathon' },
-    { id: 103, title: 'Startup Pitch Day' },
-    { id: 104, title: 'Design Sprint' },
-    { id: 105, title: 'Sports Meet' },
-  ];
-  const names = ['Pranav', 'Sneha', 'Aarav', 'Ishita', 'Rohan', 'Meera', 'Vikram', 'Nisha', 'Kabir', 'Diya'];
-  const tickets = ['General', 'VIP', 'Student', 'Early Bird'];
-  const sources = ['website', 'mobile', 'referral', 'qr'];
-  const rand = (n) => Math.floor(Math.random() * n);
-  const randFrom = (arr) => arr[rand(arr.length)];
-  const randomDateWithin30 = () => {
-    const now = Date.now();
-    const days = rand(30);
-    const past = now - days * 24 * 3600 * 1000;
-    return new Date(past).toISOString();
-  };
-  const list = [];
-  for (let i = 0; i < 48; i++) {
-    const ev = randFrom(events);
-    const qty = 1 + rand(3);
-    const price = [0, 199, 299, 499, 999][rand(5)];
-    const status = randFrom(STATUSES);
-    list.push({
-      id: 1000 + i,
-      userName: randFrom(names) + ' ' + ['K','S','R','M'][rand(4)] + '.',
-      userEmail: `user${i}@mail.com`,
-      eventId: ev.id,
-      eventTitle: ev.title,
-      ticketType: randFrom(tickets),
-      qty,
-      price,
-      total: qty * price,
-      status,
-      registeredAt: randomDateWithin30(),
-      checkIn: Math.random() > 0.7,
-      notes: '',
-      source: randFrom(sources),
-    });
+// We'll fetch real data from backend; keep a small client-side mapper
+
+function mapServerRowsToUI(eventsResponse) {
+  // eventsResponse: { events: [ { event: {event_id, title}, registrations: [ ... ] } ] }
+  const rows = [];
+  for (const group of eventsResponse.events || []) {
+    for (const r of group.registrations || []) {
+      const id = r.registration_id;
+      const userName = r.registrant_display_name || r.registrant_username || `User ${r.registrant_id || ''}`;
+      const userEmail = r.registrant_email || '';
+      const eventId = group.event.event_id;
+      const eventTitle = group.event.title;
+      const ticketType = r.ticket_type || 'General';
+      const price = r.amount != null ? Number(r.amount) : 0;
+      const qty = r.qty != null ? Number(r.qty) : 1;
+      const total = qty * price;
+      const status = (r.status || '').toLowerCase();
+      const registeredAt = r.registered_at || r.registeredAt || new Date().toISOString();
+
+      rows.push({
+        id,
+        userName,
+        userEmail,
+        eventId,
+        eventTitle,
+        ticketType,
+        qty,
+        price,
+        total,
+        status,
+        registeredAt,
+        raw: r,
+      });
+    }
   }
-  return list;
+  return rows;
 }
 
 export default function Registrations() {
-  const [rows, setRows] = useState(() => makeMockData());
+  const { addNotification } = useContext(NotificationContext) || { addNotification: () => {} };
+  const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState([]); // multi-select
   const [sortBy, setSortBy] = useState('registeredAt');
@@ -61,6 +57,23 @@ export default function Registrations() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(new Set());
   const [selectedEventId, setSelectedEventId] = useState('all');
+
+  // Fetch registrations owned by the logged-in user
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const resp = await API.get('/registrations/mine');
+        if (!mounted) return;
+        const uiRows = mapServerRowsToUI(resp.data);
+        setRows(uiRows);
+      } catch (err) {
+        console.error('Failed to load registrations:', err);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -131,10 +144,23 @@ export default function Registrations() {
     return next;
   });
 
-  const applyStatusToSelected = (newStatus) => {
+  const applyStatusToSelected = async (newStatus) => {
     if (selected.size === 0) return;
-    setRows(prev => prev.map(r => selected.has(r.id) ? { ...r, status: newStatus } : r));
-    setSelected(new Set());
+    const ids = Array.from(selected);
+    // optimistic update
+    const prevRows = rows;
+    setRows(prev => prev.map(r => ids.includes(r.id) ? { ...r, status: newStatus } : r));
+    try {
+      await API.patch('/registrations/status/bulk', { ids, status: newStatus });
+      addNotification && addNotification({ type: 'success', text: `Updated ${ids.length} registrations to ${newStatus}` });
+    } catch (err) {
+      console.error('Bulk status update failed:', err);
+      // rollback on failure
+      setRows(prevRows);
+      addNotification && addNotification({ type: 'error', text: `Failed to update ${ids.length} registrations` });
+    } finally {
+      setSelected(new Set());
+    }
   };
   const deleteSelected = () => {
     if (selected.size === 0) return;
@@ -142,14 +168,26 @@ export default function Registrations() {
     setSelected(new Set());
   };
 
-  const quickAction = (id, action) => {
-    setRows(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      if (action === 'confirm') return { ...r, status: 'confirmed' };
-      if (action === 'cancel') return { ...r, status: 'cancelled' };
-      if (action === 'waitlist') return { ...r, status: 'waitlisted' };
-      return r;
-    }));
+  const quickAction = async (id, action) => {
+    const mapAction = {
+      confirm: 'confirmed',
+      cancel: 'cancelled',
+      waitlist: 'waitlisted',
+    };
+    const newStatus = mapAction[action];
+    if (!newStatus) return;
+    const prevRows = rows;
+    // optimistic update
+    setRows(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+    try {
+      await API.patch(`/registrations/status/${id}`, { status: newStatus });
+      addNotification && addNotification({ type: 'success', text: `Status set to ${newStatus}` });
+    } catch (err) {
+      console.error('Status update failed:', err);
+      // rollback
+      setRows(prevRows);
+      addNotification && addNotification({ type: 'error', text: `Failed to set status: ${newStatus}` });
+    }
   };
 
   const exportCSV = () => {

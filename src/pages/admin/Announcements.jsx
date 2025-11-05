@@ -1,8 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext, useEffect } from 'react';
 import { FiPlus, FiSearch, FiFilter, FiX, FiCalendar, FiSend, FiFileText } from 'react-icons/fi';
 import './Announcements.css';
+import API from '../../api';
+import { NotificationContext } from '../../context/NotificationContext';
 
 export default function Announcements() {
+  const { addNotification } = useContext(NotificationContext) || { addNotification: () => {} };
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [audience, setAudience] = useState('all');
@@ -12,26 +15,72 @@ export default function Announcements() {
   const [detailError, setDetailError] = useState('');
   const [createStatus, setCreateStatus] = useState('Draft');
   const [editStatus, setEditStatus] = useState('Draft');
+  const [items, setItems] = useState([]);
+  const [eventsOwned, setEventsOwned] = useState([]);
 
-  const [items, setItems] = useState(() => [
-    { id: 'a1', date: '2025-10-01', time: '09:00', audience: 'All Users', event: 'Orientation Week', title: 'Welcome Week!', status: 'Scheduled', message: 'Kick-off events all week.' },
-    { id: 'a2', date: '2025-10-03', time: '', audience: 'Organizers', event: 'Tech Expo', title: 'Booth Guidelines', status: 'Draft', message: 'Review the updated booth rules.' },
-    { id: 'a3', date: '2025-09-20', time: '14:00', audience: 'Attendees', event: 'App Launch', title: 'App Update', status: 'Sent', message: 'New app version with bug fixes.' },
-    { id: 'a4', date: '2025-10-10', time: '10:30', audience: 'Volunteers', event: 'Volunteer Drive', title: 'Shift Sign-ups', status: 'Scheduled', message: 'Choose your preferred time slots.' },
-    { id: 'a5', date: '2025-09-28', time: '12:00', audience: 'All Users', event: 'Safety Workshop', title: 'Safety Notice', status: 'Sent', message: 'Please follow campus safety guidelines.' },
-  ]);
+  // Load announcements from backend
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await API.get('/announcements');
+        if (!mounted) return;
+        const anns = (resp.data.announcements || []).map(a => ({
+          id: `a${a.announcement_id}`,
+          announcement_id: a.announcement_id,
+          date: a.created_at ? a.created_at.split('T')[0] : (a.created_at || '').split(' ')[0],
+          time: a.scheduled_at ? new Date(a.scheduled_at).toTimeString().slice(0,5) : '',
+          audience: 'Event',
+          event: a.event_id,
+          event_id: a.event_id,
+          title: a.title,
+          status: a.status || 'Draft',
+          message: a.message,
+          raw: a,
+        }));
+        if (anns.length) setItems(prev => [...anns, ...prev.filter(p => !p.announcement_id)]);
+      } catch (err) {
+        console.error('Failed to load announcements:', err);
+      }
+    })();
+
+    // fetch events owned by this admin/owner so we only allow sending to those events
+    (async () => {
+      try {
+        const r = await API.get('/events/mine');
+        if (!mounted) return;
+        // r.data may be an array or object depending on backend; normalize
+        const owned = Array.isArray(r.data) ? r.data : (r.data?.events || r.data || []);
+        setEventsOwned(owned);
+      } catch (err) {
+        console.error('Failed to load owned events:', err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const eventsMap = useMemo(() => {
+    const m = {};
+    for (const e of eventsOwned || []) m[e.event_id] = e.title;
+    return m;
+  }, [eventsOwned]);
 
   const eventNames = useMemo(() => {
-    const set = new Set(items.map(i => i.event).filter(Boolean));
-    return Array.from(set);
-  }, [items]);
+    return (eventsOwned || []).map(e => ({ id: e.event_id, title: e.title }));
+  }, [eventsOwned]);
+
+  const modalEventOptions = useMemo(() => {
+    if (!selected) return [];
+    const ids = [selected.event_id || selected.event, ...(eventsOwned || []).map(e => e.event_id)];
+    return Array.from(new Set(ids)).filter(Boolean);
+  }, [selected, eventsOwned]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter(i => {
       const matchQ = !q || i.title.toLowerCase().includes(q) || i.message.toLowerCase().includes(q);
       const matchS = status === 'all' || i.status.toLowerCase() === status;
-      const matchA = audience === 'all' || i.event === audience;
+      const matchA = audience === 'all' || String(i.event || i.event_id || '').toLowerCase() === String(audience).toLowerCase();
       return matchQ && matchS && matchA;
     });
   }, [items, query, status, audience]);
@@ -89,8 +138,53 @@ export default function Announcements() {
         return;
       }
     }
+    // Persist update to backend
+    (async () => {
+      try {
+        const patchBody = {
+          title: updated.title,
+          message: updated.message,
+          status: updated.status,
+          scheduled_at: updated.date && updated.time ? `${updated.date}T${updated.time}:00` : null,
+        };
+        // If the announcement has an announcement_id, PATCH; otherwise it's a client-only draft
+        if (selected.announcement_id) {
+          const resp = await API.patch(`/announcements/${selected.announcement_id}`, patchBody);
+          if (resp.data && resp.data.sent) {
+            addNotification && addNotification({ type: 'success', text: `Announcement sent to ${resp.data.sent.inserted || resp.data.sent.requested || 0} users` });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to persist announcement update:', err);
+        addNotification && addNotification({ type: 'error', text: 'Failed to save announcement' });
+      }
+    })();
     setItems(prev => prev.map(it => (it.id === selected.id ? updated : it)));
     setSelected(updated);
+    // If edited status moved to Sent, trigger backend announcement send for non-persisted drafts
+    if (updated.status === 'Sent' && selected.status !== 'Sent') {
+      (async () => {
+        try {
+          if (selected.announcement_id) {
+            // persisted announcement: server already handled sending in the PATCH call above
+          } else {
+            // create-and-send for the local draft
+            const resp = await API.post('/announcements', {
+              event_id: updated.event || updated.event_id,
+              title: updated.title,
+              message: updated.message,
+              status: 'Sent'
+            });
+            if (resp.data && resp.data.sent) {
+              addNotification && addNotification({ type: 'success', text: `Announcement sent to ${resp.data.sent.inserted || resp.data.sent.requested || 0} users` });
+            }
+          }
+        } catch (err) {
+          console.error('Send announcement failed:', err);
+          addNotification && addNotification({ type: 'error', text: 'Failed to send announcement' });
+        }
+      })();
+    }
     // Keep modal open after save to confirm; alternatively close: closeDetails();
   }
 
@@ -126,6 +220,28 @@ export default function Announcements() {
     };
     setItems(prev => [newItem, ...prev]);
     setDrawerOpen(false);
+    // Persist creation to backend
+    (async () => {
+      try {
+        const body = {
+          event_id: newItem.event,
+          title: newItem.title,
+          message: newItem.message,
+          status: newItem.status,
+          scheduled_at: newItem.date && newItem.time ? `${newItem.date}T${newItem.time}:00` : null,
+        };
+          const resp = await API.post('/announcements', { ...body, event_id: parseInt(String(body.event_id), 10) || body.event_id });
+        if (resp.data && resp.data.sent) {
+          addNotification && addNotification({ type: 'success', text: `Announcement sent to ${resp.data.sent.inserted || resp.data.sent.requested || 0} users` });
+        } else if (resp.data && resp.data.announcementId) {
+          // update our local item to include announcement id
+          setItems(prev => prev.map(it => it === newItem ? { ...it, announcement_id: resp.data.announcementId, id: `a${resp.data.announcementId}` } : it));
+        }
+      } catch (err) {
+        console.error('Create announcement failed:', err);
+        addNotification && addNotification({ type: 'error', text: 'Failed to create announcement' });
+      }
+    })();
   }
 
   return (
@@ -164,8 +280,8 @@ export default function Announcements() {
             <FiCalendar />
             <select value={audience} onChange={e => setAudience(e.target.value)} aria-label="Events">
               <option value="all">All Events</option>
-              {eventNames.map(a => (
-                <option key={a} value={a}>{a}</option>
+              {eventNames.map(ev => (
+                <option key={ev.id} value={String(ev.id)}>{ev.title}</option>
               ))}
             </select>
           </div>
@@ -218,7 +334,7 @@ export default function Announcements() {
               filtered.map(row => (
                 <tr key={row.id} className="row-clickable" onClick={() => openDetails(row)}>
                   <td>{row.date}</td>
-                  <td>{row.event || '-'}</td>
+                  <td>{eventsMap[row.event] || eventsMap[row.event_id] || row.event || '-'}</td>
                   <td className="title-cell">
                     <div className="title">{row.title}</div>
                     <div className="message">{row.message}</div>
@@ -263,8 +379,8 @@ export default function Announcements() {
               )}
               <label>
                 <span>Events</span>
-                <select name="event" defaultValue={eventNames[0] || 'General'}>
-                  {eventNames.map(a => <option key={a} value={a}>{a}</option>)}
+                <select name="event" defaultValue={String(eventNames[0]?.id || '')}>
+                  {(eventNames || []).map(ev => <option key={ev.id} value={String(ev.id)}>{ev.title}</option>)}
                 </select>
               </label>
               <label>
@@ -317,9 +433,9 @@ export default function Announcements() {
               )}
               <label>
                 <span>Events</span>
-                <select name="event" defaultValue={selected.event || ''} disabled={selected.status !== 'Draft'}>
-                  {[selected.event, ...new Set(eventNames)].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).map(ev => (
-                    <option key={ev} value={ev}>{ev}</option>
+                <select name="event" defaultValue={String(selected.event_id || selected.event || '')} disabled={selected.status !== 'Draft'}>
+                  {modalEventOptions.map(ev => (
+                    <option key={ev} value={String(ev)}>{eventsMap[ev] || ev}</option>
                   ))}
                 </select>
               </label>

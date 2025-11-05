@@ -28,7 +28,7 @@ export default function AddEvent() {
     requiresApproval: true,
   });
   const [locations, setLocations] = useState([
-    { name: '', address: '' },
+    { name: '' },
   ]);
   const [tickets, setTickets] = useState([
     { name: 'General', price: 0, qty: 100 },
@@ -104,7 +104,7 @@ export default function AddEvent() {
 
   const updateField = (key, value) => setForm(f => ({ ...f, [key]: value }));
 
-  const addLocation = () => setLocations(l => [...l, { name: '', address: '' }]);
+  const addLocation = () => setLocations(l => [...l, { name: '' }]);
   const removeLocation = (idx) => setLocations(l => l.filter((_, i) => i !== idx));
   const updateLocation = (idx, key, value) => setLocations(l => l.map((row, i) => i === idx ? { ...row, [key]: value } : row));
 
@@ -164,10 +164,10 @@ export default function AddEvent() {
       requiresApproval: t.requiresApproval ?? false,
     }));
     if (Array.isArray(t.locations) && t.locations.length) {
-      setLocations(t.locations.map(x => ({ name: x.name || '', address: x.address || '' })));
+      setLocations(t.locations.map(x => ({ name: x.name || '' })));
     } else if (t.location) {
       // Handle legacy single location
-      setLocations([{ name: t.location, address: '' }]);
+      setLocations([{ name: t.location }]);
     }
     if (Array.isArray(t.tickets) && t.tickets.length) setTickets(t.tickets.map(x => ({ name: x.name || '', price: Number(x.price||0), qty: Number(x.qty||0) })));
     if (Array.isArray(t.sessions) && t.sessions.length) setSessions(t.sessions.map(x => ({ title: x.title||'', start: x.start||'', end: x.end||'', desc: x.desc||'' })));
@@ -259,9 +259,9 @@ export default function AddEvent() {
         title: modalDraft.title,
         description: modalDraft.description,
         capacity: Number(modalDraft.capacity) || 0,
-        locations: Array.isArray(modalDraft.locations)
-          ? modalDraft.locations.map(l => ({ name: (l.name||'').trim(), address: (l.address||'').trim() }))
-          : [],
+      locations: Array.isArray(modalDraft.locations)
+        ? modalDraft.locations.map(l => ({ name: (l.name||'').trim() }))
+        : [],
         sessions: Array.isArray(modalDraft.sessions)
           ? modalDraft.sessions.map(s => ({ title: (s.title||'').trim(), start: s.start || '', end: s.end || '', desc: (s.desc||'').trim() }))
           : [],
@@ -394,7 +394,7 @@ export default function AddEvent() {
       fd.append('capacity', String(form.capacity || 0));
       // locations as JSON array (filter empty)
       const locs = locations
-        .map(l => ({ name: (l.name||'').trim(), address: (l.address||'').trim() }))
+        .map(l => ({ name: (l.name||'').trim() }))
         .filter(l => l.name);
       fd.append('locations', JSON.stringify(locs));
       // sessions as JSON array (filter empty rows)
@@ -427,7 +427,7 @@ export default function AddEvent() {
       } catch (_) {}
       // Reset form after success
   setForm({ title: '', date: '', startTime: '', endTime: '', category: 'Technology', capacity: '', description: '', isPublic: true, requiresApproval: true });
-      setLocations([{ name: '', address: '' }]);
+  setLocations([{ name: '' }]);
       setTickets([{ name: 'General', price: 0, qty: 100 }]);
       setSessions([{ title: '', start: '', end: '', desc: '' }]);
       setBannerName('');
@@ -510,7 +510,6 @@ export default function AddEvent() {
           <div className="locations-grid">
             <div className="location-headers">
               <span>Location Name</span>
-              <span>Address</span>
               <span></span>
             </div>
             {locations.map((loc, i) => (
@@ -520,11 +519,6 @@ export default function AddEvent() {
                     placeholder="e.g. Main Auditorium" 
                     value={loc.name} 
                     onChange={e => updateLocation(i, 'name', e.target.value)} 
-                  />
-                  <input 
-                    placeholder="e.g. Building A, Floor 2" 
-                    value={loc.address} 
-                    onChange={e => updateLocation(i, 'address', e.target.value)} 
                   />
                   {locations.length > 1 && (
                     <button 
@@ -626,9 +620,9 @@ export default function AddEvent() {
 
         <div className="actions">
           <button className="btn primary" disabled={!isValid || submitting} type="submit">{submitting ? 'Submitting…' : 'Create Event'}</button>
-          <button className="btn secondary" type="button" onClick={() => {
+            <button className="btn secondary" type="button" onClick={() => {
             setForm({ title: '', date: '', startTime: '', endTime: '', category: 'Technology', capacity: '', description: '', isPublic: true, requiresApproval: true });
-            setLocations([{ name: '', address: '' }]);
+            setLocations([{ name: '' }]);
             setTickets([{ name: 'General', price: 0, qty: 100 }]);
             setSessions([{ title: '', start: '', end: '', desc: '' }]);
             setBannerName('');
@@ -754,13 +748,12 @@ export default function AddEvent() {
                 <div className="field">
                   <div className="section-header" style={{ padding: 0, marginBottom: 8 }}>
                     <label style={{ margin: 0 }}><FiMapPin /> Locations</label>
-                    <button type="button" className="btn ghost" onClick={() => setModalDraft(m => ({ ...m, locations: [...(m.locations||[]), { name: '', address: '' }] }))}><FiPlus /> Add</button>
+                    <button type="button" className="btn ghost" onClick={() => setModalDraft(m => ({ ...m, locations: [...(m.locations||[]), { name: '' }] }))}><FiPlus /> Add</button>
                   </div>
                   {(modalDraft.locations && modalDraft.locations.length > 0) ? (
                     <div className="locations-grid">
                       <div className="location-headers">
                         <span>Location Name</span>
-                        <span>Address</span>
                         <span></span>
                       </div>
                       {modalDraft.locations.map((l, idx) => (
@@ -772,14 +765,6 @@ export default function AddEvent() {
                               onChange={e => setModalDraft(m => ({
                                 ...m,
                                 locations: m.locations.map((x,i) => i===idx ? { ...x, name: e.target.value } : x)
-                              }))}
-                            />
-                            <input
-                              placeholder="e.g. Building A, Floor 2"
-                              value={l.address || ''}
-                              onChange={e => setModalDraft(m => ({
-                                ...m,
-                                locations: m.locations.map((x,i) => i===idx ? { ...x, address: e.target.value } : x)
                               }))}
                             />
                             {modalDraft.locations.length > 1 && (

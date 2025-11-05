@@ -72,6 +72,9 @@
 .btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--glass-border); background: var(--glass-bg); color:var(--txt); cursor:pointer; font-weight: 600; }
 .btn.primary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; border-color: transparent; }
 
+/* utility: full-width button */
+.btn.full { width: 100%; justify-content: center; }
+
 .empty { text-align:center; padding: 24px; color: var(--txt-muted); }
 
 /* Modal */

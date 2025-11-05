@@ -163,8 +163,8 @@
 
 .events-grid {
   display: grid;
-  grid-template-columns: 1fr !important;
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
   max-width: 90vw;
   margin: 0 auto;
 }
@@ -186,18 +186,53 @@
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: transform 200ms ease, box-shadow 200ms ease;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  padding: 12px;
+  position: relative;
 }
 
 .event-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 20px rgba(124, 58, 237, 0.3);
-  background: rgba(124, 58, 237, 0.05);
-  border-color: rgba(124, 58, 237, 0.4);
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
 }
+
+.event-card img {
+  display: none;
+}
+
+.card-banner {
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.card-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-cat {
+  background: rgba(124,58,237,0.08);
+  color: var(--purple);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.event-details h3 { font-size: 1.05rem; margin: 0; color: var(--txt); font-weight: 700; }
+.event-date, .event-location { font-size: 0.9rem; color: var(--txt-muted); margin: 0; }
 
 .event-card.simple {
   padding: 32px;
@@ -219,23 +254,20 @@
 }
 
 .delete-btn {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
+  /* Inline (non-absolute) small round button so it can sit next to other action buttons
+     Actions container (.event-card > .card-actions or inline container) should handle positioning */
   background: color-mix(in oklab, var(--red) 10%, var(--glass-bg));
   border: 1px solid color-mix(in oklab, var(--red) 30%, var(--glass-border));
   color: var(--red);
   border-radius: 8px;
-  width: 40px;
-  height: 120px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 22px;
+  font-size: 18px;
   transition: all 0.2s ease;
-  z-index: 2;
 }
 
 .delete-btn:hover {
@@ -602,6 +634,15 @@
   max-height: calc(90vh - 80px);
   overflow-y: auto;
 }
+
+.preview-banner {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.preview-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .preview-section {
   margin-bottom: 24px;
@@ -1116,4 +1157,66 @@
   .preview-config {
     grid-template-columns: 1fr;
   }
+}
+
+/* Enhanced edit-modal/form styling (overrides & improvements) */
+.preview-panel {
+  width: min(980px, 96vw);
+  max-height: 92vh;
+  border-radius: 12px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-header {
+  padding: 14px 18px;
+}
+
+.preview-header h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--txt);
+}
+
+.preview-content {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.preview-content form { display: grid; gap: 12px; }
+
+.preview-content label { display: flex; flex-direction: column; gap: 8px; font-weight: 700; color: var(--txt); }
+.preview-content input[type="text"],
+.preview-content input[type="date"],
+.preview-content input[type="time"],
+.preview-content input[type="number"],
+.preview-content textarea,
+.preview-content select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--txt);
+  font-size: 14px;
+}
+
+.preview-content textarea { min-height: 80px; resize: vertical; }
+
+.preview-content .inline-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.preview-content .triple-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+.media-readonly { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.media-thumb { width: 110px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border); background: #f8fafc; display:flex; align-items:center; justify-content:center; }
+.media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.docs-readonly { padding: 10px 12px; background: color-mix(in oklab, var(--glass-bg) 40%, #fff); border-radius: 8px; border: 1px dashed var(--glass-border); }
+
+.preview-content .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.preview-content .btn { padding: 10px 14px; border-radius: 8px; }
+
+@media (max-width: 720px) {
+  .preview-panel { width: calc(100vw - 24px); }
+  .preview-content .inline-row, .preview-content .triple-row { grid-template-columns: 1fr; }
+  .media-thumb { width: 80px; height: 56px; }
 }

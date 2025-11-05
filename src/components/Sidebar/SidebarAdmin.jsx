@@ -13,15 +13,13 @@ const menuMap = {
   ],
   // Event Management (renamed from Attendee Management in topbar)
   management: [
-    { label: "Event FAQs Configuration", path: "event/configuration" },
+    { label: "Event FAQs Configuration", path: "management/configuration" },
     { label: "Registration Tracking", path: "management/tracking" },
-    { label: "Participant Communication", path: "management/communication" },
     { label: "Announcements", path: "management/announcements" },
-    { label: "Registration Form Designer", path: "management/registration-designer" }
+    // Registration Form Designer removed
   ],
   control: [
-    { label: "Payment Dashboard", path: "control/payment" },
-    { label: "Ticket Scanner", path: "control/scanner" }
+    // Control section removed
   ],
   analytics: [
     { label: "Dashboard", path: "analytics/dashboard" },
@@ -32,8 +30,7 @@ const menuMap = {
     { label: "Rejected Events", path: "analytics/rejected" }
   ],
   support: [
-    { label: "Collaborator Access", path: "support/access" },
-    { label: "Report Center", path: "support/center" }
+    // Support section removed
   ],
   profile: [
     { label: "Profile", path: "profile" }
