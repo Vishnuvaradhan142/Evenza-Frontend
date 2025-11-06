@@ -44,10 +44,8 @@ import DocumentsUpload from "../pages/admin/DocumentsUpload";
 import EventSubmission from "../pages/admin/EventSubmission";
 // Removed: PaymentDashboard, TicketScanner
 import AdminDashboard from "../pages/admin/AdminDashboard";
-import AdminAnalytics from "../pages/admin/AdminAnalytics";
 import AllEventsAdmin from "../pages/admin/AllEventsAdmin";
 import RejectedEvents from "../pages/admin/RejectedEvents";
-import FeedbackRatings from "../pages/admin/FeedbackRatings";
 // Removed: CollaboratorAccess, ReportCenter
 import AdminProfile from "../pages/admin/AdminProfile";
 import AdminNotifications from "../pages/admin/AdminNotifications";
@@ -55,26 +53,12 @@ import AdminNotifications from "../pages/admin/AdminNotifications";
 // Owner Pages
 import OwnerDashboard from "../pages/owner/OwnerDashboard";
 import OwnerProfile from "../pages/owner/OwnerProfile";
-import SiteSettings from "../pages/owner/SiteSettings";
-import DesignEditor from "../pages/owner/DesignEditor";
+// Removed: SiteSettings, DesignEditor, EventCategory, RolesManager, ManageAdmins, ManageUsers, LoginLogs, ActivityLogs, EventsAnalytics, ReportsIssues, RevenueDashboard
 
-import EventCategory from "../pages/owner/EventCategory";
-import RolesManager from "../pages/owner/RolesManager";
-import ManageAdmins from "../pages/owner/ManageAdmins";
-import ManageUsers from "../pages/owner/ManageUsers";
 import AdminRequests from "../pages/owner/AdminRequests";
-import LoginLogs from "../pages/owner/LoginLogs";
-import ActivityLogs from "../pages/owner/ActivityLogs";
 import OwnerNotifications from "../pages/owner/OwnerNotifications";
-import EventsAnalytics from "../pages/owner/EventsAnalytics";
-import ReportsIssues from "../pages/owner/ReportsIssues";
-import RevenueDashboard from "../pages/owner/RevenueDashboard";
 import AllEvents from "../pages/owner/AllEvents";
-import ArchiveEvents from "../pages/owner/ArchiveEvents";
 import PublicReviews from "../pages/owner/PublicReviews";
-import ContentModeration from "../pages/owner/ContentModeration";
-import EmailTemplates from "../pages/owner/EmailTemplates";
-import SMSGateway from "../pages/owner/SMSGateway";
 
 const AppRoutes = () => {
   return (
@@ -155,8 +139,6 @@ const AppRoutes = () => {
             {/* ANALYTICS */}
             <Route path="analytics">
               <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="performance" element={<AdminAnalytics />} />
-              <Route path="ratings" element={<FeedbackRatings />} />
               <Route path="schedule" element={<ScheduleManager />} />
               <Route path="all-events" element={<AllEventsAdmin />} />
               <Route path="rejected" element={<RejectedEvents />} />
@@ -182,30 +164,15 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="management/dashboard" replace />} />
           {/* Management */}
           <Route path="management/dashboard" element={<OwnerDashboard />} />
-          <Route path="management/site" element={<SiteSettings />} />
-          <Route path="management/design" element={<DesignEditor />} />
-
-          <Route path="management/category" element={<EventCategory />} />
-          <Route path="management/roles" element={<RolesManager />} />
+          {/* Removed: site, design, category, roles */}
           {/* Controls */}
-          <Route path="controls/admins" element={<ManageAdmins />} />
-          <Route path="controls/users" element={<ManageUsers />} />
           <Route path="controls/requests" element={<AdminRequests />} />
-          <Route path="controls/login" element={<LoginLogs />} />
-          <Route path="controls/activity" element={<ActivityLogs />} />
           <Route path="controls/notifications" element={<OwnerNotifications />} />
-          {/* Analytics */}
-          <Route path="analytics/events" element={<EventsAnalytics />} />
-          <Route path="analytics/issues" element={<ReportsIssues />} />
-          <Route path="analytics/revenue" element={<RevenueDashboard />} />
+          {/* Analytics - removed */}
           {/* Oversight */}
           <Route path="oversight/events" element={<AllEvents />} />
-          <Route path="oversight/archive" element={<ArchiveEvents />} />
           <Route path="oversight/reviews" element={<PublicReviews />} />
-          <Route path="oversight/moderation" element={<ContentModeration />} />
-          {/* Communication */}
-          <Route path="communication/templates" element={<EmailTemplates />} />
-          <Route path="communication/settings" element={<SMSGateway />} />
+          {/* Communication - removed */}
           {/* Profile */}
           <Route path="profile" element={<OwnerProfile />} />
           <Route path="logout" element={<Logout />} />

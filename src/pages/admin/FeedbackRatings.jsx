@@ -9,11 +9,11 @@ import {
   FiFilter,
   FiSearch,
   FiEye,
-  FiThumbsUp,
   FiBarChart2, // Changed from FiBarChart3 to FiBarChart2
   FiRefreshCw
 } from "react-icons/fi";
 import "./FeedbackRatings.css";
+import API from "../../api";
 
 const RATING_COLORS = {
   1: "#ef4444", // red
@@ -34,62 +34,59 @@ const FeedbackRatings = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState("list"); // list or cards
 
-  // Generate dummy feedback data
-  const generateDummyData = () => {
-    const events = [
-      "Tech Conference 2024", "Music Festival", "Art Workshop", 
-      "Business Summit", "Food Fair", "Gaming Tournament",
-      "Fashion Show", "Book Club Meeting", "Fitness Bootcamp"
-    ];
-    
-    const users = [
-      "Alice Johnson", "Bob Smith", "Carol Davis", "David Wilson",
-      "Emma Brown", "Frank Miller", "Grace Lee", "Henry Taylor"
-    ];
-
-    const comments = [
-      "Amazing event! Great organization and speakers.",
-      "The venue was perfect and the food was excellent.",
-      "Could have been better organized, but overall good.",
-      "Not what I expected. The schedule was confusing.",
-      "Fantastic experience! Will definitely attend next time.",
-      "Good content but the audio quality was poor.",
-      "Well organized event with great networking opportunities.",
-      "The event exceeded my expectations in every way.",
-      "Some technical issues but the content was valuable.",
-      "Perfect event! Everything was on time and well planned."
-    ];
-
-    return Array.from({ length: 50 }, (_, i) => ({
-      id: i + 1,
-      event_name: events[Math.floor(Math.random() * events.length)],
-      event_id: Math.floor(Math.random() * 20) + 1,
-      user_name: users[Math.floor(Math.random() * users.length)],
-      user_id: Math.floor(Math.random() * 100) + 1,
-      rating: Math.floor(Math.random() * 5) + 1,
-      comment: Math.random() > 0.3 ? comments[Math.floor(Math.random() * comments.length)] : "",
-      created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      helpful_votes: Math.floor(Math.random() * 15),
-      verified_attendee: Math.random() > 0.2,
-      response_needed: Math.random() > 0.8,
-      admin_response: Math.random() > 0.7 ? "Thank you for your feedback!" : null,
-    }));
-  };
-
+  // Load feedback from backend (admin endpoint)
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setFeedbacks(generateDummyData());
-      setLoading(false);
-    }, 500);
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+  const ownerId = localStorage.getItem("user_id");
+  const resp = await API.get("/reviews/admin", { params: { owner_id: ownerId } });
+        if (!mounted) return;
+        const rows = Array.isArray(resp.data) ? resp.data : [];
+        const mapped = rows.map(r => ({
+          id: r.review_id,
+          event_name: r.event_title || `Event ${r.event_id}`,
+          event_id: r.event_id,
+          user_name: r.user_display_name || `User ${r.user_id}`,
+          user_id: r.user_id,
+          rating: Number(r.rating) || 0,
+          comment: r.review || "",
+          created_at: r.created_at,
+        }));
+        setFeedbacks(mapped);
+      } catch (e) {
+        console.error("Failed to load reviews:", e);
+        setFeedbacks([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
 
-  const refreshData = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setFeedbacks(generateDummyData());
+  const refreshData = async () => {
+    try {
+      setLoading(true);
+  const ownerId = localStorage.getItem("user_id");
+  const resp = await API.get("/reviews/admin", { params: { owner_id: ownerId } });
+      const rows = Array.isArray(resp.data) ? resp.data : [];
+      const mapped = rows.map(r => ({
+        id: r.review_id,
+        event_name: r.event_title || `Event ${r.event_id}`,
+        event_id: r.event_id,
+        user_name: r.user_display_name || `User ${r.user_id}`,
+        user_id: r.user_id,
+        rating: Number(r.rating) || 0,
+        comment: r.review || "",
+        created_at: r.created_at,
+      }));
+      setFeedbacks(mapped);
+    } catch (e) {
+      console.error("Failed to refresh reviews:", e);
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   // Filter and sort feedbacks
@@ -116,8 +113,6 @@ const FeedbackRatings = () => {
           return b.rating - a.rating;
         case "lowest":
           return a.rating - b.rating;
-        case "most_helpful":
-          return b.helpful_votes - a.helpful_votes;
         default:
           return 0;
       }
@@ -315,7 +310,7 @@ const FeedbackRatings = () => {
                 <option value="oldest">Oldest First</option>
                 <option value="highest">Highest Rating</option>
                 <option value="lowest">Lowest Rating</option>
-                <option value="most_helpful">Most Helpful</option>
+                {/* removed most_helpful */}
               </select>
             </div>
 
@@ -358,22 +353,18 @@ const FeedbackRatings = () => {
                   <th>Rating</th>
                   <th>Comment</th>
                   <th>Date</th>
-                  <th>Helpful</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {processedFeedbacks.map(feedback => (
-                  <tr key={feedback.id} className={feedback.response_needed && !feedback.admin_response ? "needs-response" : ""}>
+                  <tr key={feedback.id}>
                     <td className="event-cell">
                       <span className="event-name">{feedback.event_name}</span>
                     </td>
                     <td className="user-cell">
                       <div className="user-info">
                         <span className="user-name">{feedback.user_name}</span>
-                        {feedback.verified_attendee && (
-                          <span className="verified-badge">✓</span>
-                        )}
                       </div>
                     </td>
                     <td>
@@ -386,12 +377,6 @@ const FeedbackRatings = () => {
                     </td>
                     <td className="date-cell">
                       {new Date(feedback.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="helpful-cell">
-                      <div className="helpful-votes">
-                        <FiThumbsUp className="helpful-icon" />
-                        {feedback.helpful_votes}
-                      </div>
                     </td>
                     <td>
                       <button 
@@ -409,16 +394,13 @@ const FeedbackRatings = () => {
         ) : (
           <div className="feedback-cards-grid">
             {processedFeedbacks.map(feedback => (
-              <div key={feedback.id} className={`feedback-card ${feedback.response_needed && !feedback.admin_response ? "needs-response" : ""}`}>
+              <div key={feedback.id} className={`feedback-card`}>
                 <div className="card-header">
                   <div className="event-info">
                     <h4 className="event-name">{feedback.event_name}</h4>
                     <div className="user-info">
                       <FiUser className="user-icon" />
                       <span>{feedback.user_name}</span>
-                      {feedback.verified_attendee && (
-                        <span className="verified-badge">✓</span>
-                      )}
                     </div>
                   </div>
                   <StarRating rating={feedback.rating} size="lg" />
@@ -436,10 +418,6 @@ const FeedbackRatings = () => {
                       <FiCalendar />
                       {new Date(feedback.created_at).toLocaleDateString()}
                     </span>
-                    <span className="helpful">
-                      <FiThumbsUp />
-                      {feedback.helpful_votes} helpful
-                    </span>
                   </div>
                   <button 
                     className="btn tiny"
@@ -448,13 +426,6 @@ const FeedbackRatings = () => {
                     <FiEye /> View Details
                   </button>
                 </div>
-                
-                {feedback.response_needed && !feedback.admin_response && (
-                  <div className="response-alert">
-                    <FiTrendingDown />
-                    Needs Admin Response
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -480,12 +451,7 @@ const FeedbackRatings = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">User:</span>
-                  <span className="detail-value">
-                    {selectedFeedback.user_name}
-                    {selectedFeedback.verified_attendee && (
-                      <span className="verified-badge">✓ Verified</span>
-                    )}
-                  </span>
+                  <span className="detail-value">{selectedFeedback.user_name}</span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Rating:</span>
@@ -497,10 +463,7 @@ const FeedbackRatings = () => {
                     {new Date(selectedFeedback.created_at).toLocaleString()}
                   </span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Helpful Votes:</span>
-                  <span className="detail-value">{selectedFeedback.helpful_votes}</span>
-                </div>
+                {/* Helpful votes removed */}
               </div>
               
               {selectedFeedback.comment && (
@@ -510,20 +473,10 @@ const FeedbackRatings = () => {
                 </div>
               )}
               
-              {selectedFeedback.admin_response && (
-                <div className="admin-response">
-                  <h4>Admin Response:</h4>
-                  <div className="response-text">{selectedFeedback.admin_response}</div>
-                </div>
-              )}
+              {/* Admin response section removed */}
             </div>
             
             <div className="modal-footer">
-              {selectedFeedback.response_needed && !selectedFeedback.admin_response && (
-                <button className="btn primary">
-                  Add Response
-                </button>
-              )}
               <button className="btn secondary" onClick={() => setSelectedFeedback(null)}>
                 Close
               </button>

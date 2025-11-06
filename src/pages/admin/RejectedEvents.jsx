@@ -1,19 +1,48 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiEye, FiX } from "react-icons/fi";
 import "./AdminEventsList.css";
-
-const MOCK_REJECTED = [
-  { id: "E-104", name: "Design Sprint", category: "Design", date: "2025-02-12", status: "Rejected", reason: "Incomplete documents", reviewedBy: "QA Team" },
-  { id: "E-110", name: "Music Night", category: "Entertainment", date: "2025-03-02", status: "Rejected", reason: "Venue conflict", reviewedBy: "Admin" },
-];
+import API from "../../api";
 
 export default function RejectedEvents() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [view, setView] = useState(null);
 
-  // Default: newest first by date, no search bar
-  const filtered = useMemo(() => {
-    return [...MOCK_REJECTED].sort((a, b) => new Date(b.date) - new Date(a.date));
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError("");
+        // Rejected drafts submitted by this admin (token attached by API)
+        const resp = await API.get("/drafts/mine", { params: { status: "rejected", limit: 50 } });
+        const rows = Array.isArray(resp.data) ? resp.data : [];
+        if (!alive) return;
+        const mapped = rows.map((r) => ({
+          id: r.draft_id,
+          name: r.title,
+          category: r.category_name || r.category_id || "",
+          date: r.submitted_at || r.end_time || r.start_time,
+          status: (r.status || "").charAt(0).toUpperCase() + (r.status || "").slice(1),
+          reason: r.review_notes || "",
+          raw: r,
+        }));
+        setItems(mapped);
+      } catch (e) {
+        console.error("Failed to load rejected events:", e);
+        setError(e?.response?.data?.message || "Failed to load rejected events");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
   }, []);
+
+  // Default: newest first by date
+  const filtered = useMemo(() => {
+    return [...items].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  }, [items]);
 
   return (
     <div className="admin-events-table-page">
@@ -25,7 +54,11 @@ export default function RejectedEvents() {
       {/* Search removed as requested */}
 
       {/* Full-width responsive grid replacing the table */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="empty">Loading rejected events…</div>
+      ) : error ? (
+        <div className="empty">{error}</div>
+      ) : filtered.length === 0 ? (
         <div className="empty">No rejected events</div>
       ) : (
         <div className="aelp-grid">
@@ -39,9 +72,8 @@ export default function RejectedEvents() {
                 <div className="aelp-card__meta">
                   <span className="meta"><strong>ID:</strong> {e.id}</span>
                   <span className="meta"><strong>Category:</strong> {e.category}</span>
-                  <span className="meta"><strong>Date:</strong> {new Date(e.date).toLocaleDateString()}</span>
-                  <span className="meta"><strong>Reviewed By:</strong> {e.reviewedBy}</span>
-                  <span className="meta"><strong>Reason:</strong> {e.reason}</span>
+                  <span className="meta"><strong>Date:</strong> {e.date ? new Date(e.date).toLocaleDateString() : "-"}</span>
+                  <span className="meta"><strong>Reason:</strong> {e.reason || <em>Not provided</em>}</span>
                 </div>
               </div>
               <div className="aelp-card__actions">
@@ -60,10 +92,9 @@ export default function RejectedEvents() {
             </div>
             <div className="modal-body">
               <div className="modal-row"><span className="muted">Category</span><span>{view.category}</span></div>
-              <div className="modal-row"><span className="muted">Date</span><span>{new Date(view.date).toLocaleDateString()}</span></div>
+              <div className="modal-row"><span className="muted">Date</span><span>{view.date ? new Date(view.date).toLocaleDateString() : "-"}</span></div>
               <div className="modal-row"><span className="muted">Status</span><span className={`pill status ${view.status.toLowerCase()}`}>{view.status}</span></div>
-              <div className="modal-row"><span className="muted">Reviewed By</span><span>{view.reviewedBy}</span></div>
-              <div className="modal-row"><span className="muted">Reason</span><span>{view.reason}</span></div>
+              <div className="modal-row"><span className="muted">Reason</span><span>{view.reason || <em>Not provided</em>}</span></div>
             </div>
           </div>
         </div>

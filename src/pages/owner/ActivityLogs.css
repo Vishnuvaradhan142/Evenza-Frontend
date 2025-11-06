@@ -1,0 +1,37 @@
+.al-container{max-width:1100px;margin:0 auto;padding:20px}
+.al-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.al-header h2{margin:0;font-size:20px}
+.al-actions{display:flex;gap:8px;align-items:center}
+.al-search{padding:8px;border:1px solid #e6eef8;border-radius:6px;min-width:220px}
+.al-container .btn{padding:8px 10px;border-radius:6px;border:1px solid #d1d5db;background:#fff;cursor:pointer}
+.al-container .btn.danger{background:#fff5f5;border-color:#fecaca;color:#b91c1c}
+.al-list{background:#fff;border:1px solid #e6e9ee;border-radius:8px;padding:8px}
+.al-table{width:100%;border-collapse:collapse}
+.al-table th{padding:10px;text-align:left;border-bottom:1px solid #eef2f7;color:#374151}
+.al-table td{padding:10px;border-bottom:1px solid #f6f8fb;vertical-align:top}
+.mono{font-family:monospace;color:#6b7280}
+.chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;background:#f3f4f6;color:#111827}
+.chip.login{background:#eef2ff;color:#1e3a8a}
+.chip.update{background:#fff7ed;color:#92400e}
+.chip.delete{background:#fff1f2;color:#7f1d1d}
+.chip.system{background:#ecfccb;color:#365314}
+.detail{max-width:520px}
+.muted{text-align:center;padding:18px;color:#9ca3af}
+
+@media (max-width:900px){
+  .al-header{flex-direction:column;align-items:flex-start}
+  .al-actions{flex-wrap:wrap}
+  .detail{max-width:100%}
+}
+
+/* Dark mode overrides */
+[data-theme='dark'] .al-container { color:#e5e7eb }
+[data-theme='dark'] .al-list { background:#0b1220; border-color:#1f2937 }
+[data-theme='dark'] .al-table th { color:#cbd5e1; border-color:#1f2937 }
+[data-theme='dark'] .al-table td { border-color:#111827 }
+[data-theme='dark'] .mono { color:#94a3b8 }
+[data-theme='dark'] .chip { background:#0f172a; color:#e5e7eb }
+[data-theme='dark'] .chip.login{ background:#1e3a8a; color:#dbeafe }
+[data-theme='dark'] .chip.update{ background:#7c2d12; color:#fed7aa }
+[data-theme='dark'] .chip.delete{ background:#7f1d1d; color:#fecaca }
+[data-theme='dark'] .chip.system{ background:#14532d; color:#d9f99d }

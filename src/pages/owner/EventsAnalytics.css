@@ -1,0 +1,51 @@
+/* EventsAnalytics.css */
+
+.ea-page { padding: 1.25rem; }
+.ea-header { display:flex; justify-content:space-between; align-items:center; gap:1rem }
+.ea-header h2 { margin:0; color:var(--primary-color) }
+.ea-header .muted { color:var(--text-muted); }
+
+.ea-filter-row { display:flex; gap:.5rem; align-items:center }
+.ea-search { display:flex; align-items:center; gap:.5rem; padding:.4rem .6rem; border-radius:10px; background:var(--card-bg); border:1px solid var(--sidebar-bg) }
+.ea-search input { border:none; outline:none; background:transparent }
+.ea-dates input { padding:.4rem .5rem; border-radius:8px; border:1px solid var(--sidebar-bg); background:var(--card-bg) }
+
+.ea-kpis { display:grid; grid-template-columns: repeat(5, 1fr); gap:.75rem; margin-top:1rem }
+.kpi { background:var(--card-bg); padding:.75rem; border-radius:10px; border:1px solid var(--sidebar-bg); text-align:center }
+.kpi-title { font-size:.85rem; color:var(--text-muted) }
+.kpi-value { font-size:1.25rem; font-weight:800; color:var(--primary-color) }
+
+.ea-kpis.hero { background: linear-gradient(90deg, rgba(138,118,255,0.06), rgba(168,148,255,0.02)); padding:1rem; border-radius:12px; box-shadow: 0 8px 32px rgba(16,24,40,0.04); }
+.kpi { transition: transform .18s cubic-bezier(.2,.9,.2,1), box-shadow .18s ease }
+.kpi:hover { transform: translateY(-6px); box-shadow: 0 14px 36px rgba(16,24,40,0.06) }
+
+.mini-spark polyline { transition: stroke-dashoffset .6s ease, stroke .3s ease }
+.ea-row.flashy { transition: transform .14s ease, box-shadow .14s ease, background .14s ease }
+.ea-row.flashy:hover { transform: translateY(-6px); box-shadow: 0 12px 36px rgba(16,24,40,0.06); background: linear-gradient(90deg, rgba(138,118,255,0.03), transparent); }
+.col.trend { display:flex; align-items:center }
+
+/* pulsing accent on top row */
+.ea-row.flashy:first-of-type { box-shadow: 0 18px 44px rgba(138,118,255,0.08); border-radius:8px; }
+.ea-row.flashy:first-of-type .col.rank { color:var(--accent-color); font-weight:800 }
+
+/* small shimmer */
+.ea-table.card::after { content:""; position:absolute; left:-200px; top:0; height:100%; width:200px; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent); transform:skewX(-20deg); opacity:0.7; animation: shimmer 6s linear infinite }
+@keyframes shimmer { to { transform:translateX(140%) skewX(-20deg) } }
+
+.ea-table.card { margin-top:1rem; border-radius:10px; padding:0.5rem; border:1px solid var(--sidebar-bg); background:var(--card-bg) }
+.ea-row { display:grid; grid-template-columns: 48px 1fr 120px 120px 120px 160px; gap:.5rem; padding:.6rem .75rem; align-items:center }
+.ea-row.header { font-weight:700; color:var(--primary-color); border-bottom:1px solid var(--sidebar-bg) }
+.ea-row .muted.small { font-size:.85rem }
+.mini-spark { width:100%; height:40px }
+
+.ea-loading { padding:1rem; text-align:center }
+
+@media (max-width:1000px) {
+  .ea-kpis { grid-template-columns: repeat(2, 1fr) }
+  .ea-row { grid-template-columns: 36px 1fr 90px 90px 90px 120px }
+}
+
+@media (max-width:600px) {
+  .ea-filter-row { flex-direction:column; align-items:flex-start; gap:.5rem }
+  .ea-kpis { grid-template-columns: 1fr }
+}

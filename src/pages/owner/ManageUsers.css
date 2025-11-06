@@ -1,0 +1,349 @@
+.user-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #1e1e2f;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.user-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.user-form input,
+.user-form select {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  flex: 1;
+}
+
+.user-form button {
+  background: #4cafef;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.user-form button:hover {
+  background: #3399dd;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table th,
+.user-table td {
+  border: 1px solid #444;
+  padding: 12px;
+  text-align: center;
+}
+
+.user-table th {
+  background: #333;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}
+
+.manage-users-page {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--subtitle-color);
+}
+
+.card {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.08);
+}
+
+.form-card h3 {
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--subtitle-color);
+}
+
+.field input,
+.field select {
+  padding: 0.6rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--header-bg);
+  color: var(--text-color);
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--status-confirmed-text);
+}
+
+.error {
+  font-size: 0.7rem;
+  color: var(--status-cancelled-text);
+}
+
+.actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.btn-primary {
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed-text);
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.table-card h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.users-table th,
+.users-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.users-table tbody tr:hover {
+  background: var(--row-hover-bg);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.email {
+  font-size: 0.75rem;
+  color: var(--subtitle-color);
+}
+
+.status-badge {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.active {
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed-text);
+}
+
+.status-badge.inactive {
+  background: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+}
+
+.icon-btn {
+  background: var(--header-bg);
+  border: 1px solid var(--border-color);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.icon-btn.danger {
+  color: var(--status-cancelled-text);
+}
+
+.icon-btn:hover {
+  opacity: 0.85;
+}
+
+.empty {
+  text-align: center;
+  padding: 1.5rem 0;
+  font-size: 0.8rem;
+  color: var(--subtitle-color);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--header-bg);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.toast.success {
+  border-color: var(--status-confirmed-text);
+}
+
+.toast.danger {
+  border-color: var(--status-cancelled-text);
+}
+
+.toast button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1200;
+}
+
+.mini-modal {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  width: min(380px, 100%);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mini-head {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mini-body {
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+.mini-foot {
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.btn-light {
+  background: var(--header-bg);
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.btn-light:hover,
+.btn-danger:hover {
+  opacity: 0.85;
+}

@@ -1,0 +1,30 @@
+.et-page{padding:20px}
+.et-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:16px;border-radius:12px;background:linear-gradient(90deg,#6d28d9,#4f46e5);color:#fff}
+.et-header h2{margin:0;font-weight:700}
+.muted{color:rgba(255,255,255,0.85)}
+.et-actions{display:flex;gap:8px;align-items:center}
+.et-search{display:flex;align-items:center;gap:8px;background:var(--panel,#fff);padding:6px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+.et-search input{border:0;outline:none;background:transparent}
+.et-grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
+.card{background:var(--panel,#fff);padding:12px;border-radius:12px;box-shadow:var(--shadow,0 2px 8px rgba(16,24,40,0.06))}
+.et-list{display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}
+.et-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.04)}
+.et-row:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(79,70,229,0.08)}
+.name{font-weight:600}
+.subject{font-size:13px}
+.row-actions{display:flex;gap:8px}
+.et-card{min-height:320px}
+.empty{padding:40px;text-align:center;color:var(--muted,#6b7280)}
+.editor input.et-input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);margin-bottom:8px}
+.editor textarea{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);font-family:inherit}
+.editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.preview{margin-top:12px}
+.preview-card{border:1px solid rgba(0,0,0,0.06);padding:12px;border-radius:8px;background:linear-gradient(180deg, rgba(99,102,241,0.04), transparent)}
+.btn{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:var(--primary,#6366f1);color:#fff;border:0}
+.btn.danger{background:rgba(239,68,68,0.08);border:0}
+.et-toolbar{display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:10px}
+.et-toolbar .tools{display:flex;gap:8px}
+.et-toolbar .sample-inputs{display:flex;gap:8px}
+.et-toolbar .sample-inputs input{padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+.et-header code{background:rgba(255,255,255,0.08);padding:4px;border-radius:6px;color:#fff;margin-left:6px}

@@ -6,9 +6,7 @@ import BulbToggle from "../ThemeToggle/BulbToggle";
 const mainCategories = [
   { label: "Event Creation & Setup", path: "event" },
   { label: "Event Management", path: "management" },
-  { label: "Ticketing & Access Control", path: "control" },
-  { label: "Analytics & Insights", path: "analytics" },
-  { label: "Team & Support", path: "support" }
+  { label: "Analytics & Insights", path: "analytics" }
 ];
 
 const TopbarAdmin = ({ onMainCategoryHover, onMainCategoryLeave, username }) => {
@@ -18,9 +16,7 @@ const TopbarAdmin = ({ onMainCategoryHover, onMainCategoryLeave, username }) => 
     const defaultRoutes = {
       event: "management/event-submission",
       management: "management/tracking",
-      control: "control/payment",
-      analytics: "analytics/dashboard",
-      support: "support/access"
+      analytics: "analytics/dashboard"
     };
     navigate(`/admin/${defaultRoutes[path]}`);
   };

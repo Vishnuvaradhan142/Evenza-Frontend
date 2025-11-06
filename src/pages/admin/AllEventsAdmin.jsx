@@ -10,75 +10,63 @@ import {
   FiEye,
 } from "react-icons/fi";
 import "./MyAdminEvents.css";
+import API from "../../api";
 
 export default function MyAdminEvents() {
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [previewEvent, setPreviewEvent] = useState(null);
   const [editEvent, setEditEvent] = useState(null);
+  const BACKEND_ORIGIN = "http://localhost:5000";
+  const DEFAULT_IMAGE = `${BACKEND_ORIGIN}/uploads/events/default-event.png`;
 
   useEffect(() => {
-    setEvents([
-      {
-        id: 1,
-        name: "TechNova Hackathon 2025",
-        date: "2025-10-18",
-        location: "Innovation Hub",
-        image: "https://source.unsplash.com/600x400/?hackathon,tech",
-        registrations: 260,
-        revenue: 18000,
-        status: "Upcoming",
-      },
-      {
-        id: 2,
-        name: "Annual Cultural Extravaganza",
-        date: "2025-09-28",
-        location: "Main Auditorium",
-        image: "https://source.unsplash.com/600x400/?concert,crowd",
-        registrations: 420,
-        revenue: 24000,
-        status: "Ongoing",
-      },
-      {
-        id: 3,
-        name: "Sports Meet & Athletics",
-        date: "2025-08-21",
-        location: "College Stadium",
-        image: "https://source.unsplash.com/600x400/?sports,stadium",
-        registrations: 520,
-        revenue: 30000,
-        status: "Completed",
-      },
-      {
-        id: 4,
-        name: "Startup Pitch Fest",
-        date: "2025-11-02",
-        location: "Entrepreneurship Cell",
-        image: "https://source.unsplash.com/600x400/?startup,presentation",
-        registrations: 180,
-        revenue: 20000,
-        status: "Upcoming",
-      },
-      {
-        id: 5,
-        name: "Photography Masterclass",
-        date: "2025-09-20",
-        location: "Studio Lab",
-        image: "https://source.unsplash.com/600x400/?photography,class",
-        registrations: 95,
-        revenue: 5000,
-        status: "Ongoing",
-      },
-      {
-        id: 6,
-        name: "AI & Robotics Expo",
-        date: "2025-12-01",
-        location: "Tech Pavilion",
-        image: "https://source.unsplash.com/600x400/?robotics,ai",
-        registrations: 300,
-        revenue: 35000,
-        status: "Upcoming",
-      },
-    ]);
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const resp = await API.get("/events/mine");
+        const rows = Array.isArray(resp.data) ? resp.data : [];
+        const now = new Date();
+        const mapped = rows.map((r) => {
+          const start = r.start_time ? new Date(r.start_time) : null;
+          const end = r.end_time ? new Date(r.end_time) : null;
+          let status = "Upcoming";
+          if (start && end) {
+            if (now < start) status = "Upcoming";
+            else if (now >= start && now <= end) status = "Ongoing";
+            else status = "Completed";
+          } else if (end) {
+            status = now <= new Date(end) ? "Ongoing" : "Completed";
+          }
+          const rawImage = r.image_path || r.image || "/uploads/events/default-event.png";
+          const img = String(rawImage || "");
+          const imageAbs = img.startsWith("http://") || img.startsWith("https://")
+            ? img
+            : `${BACKEND_ORIGIN}${img}`;
+          return {
+            id: r.event_id,
+            name: r.title,
+            date: r.start_time || r.end_time,
+            location: r.location || "-",
+            image: imageAbs,
+            registrations: r.registrations || 0,
+            revenue: r.revenue || 0,
+            status,
+          };
+        });
+        if (!alive) return;
+        setEvents(mapped);
+      } catch (e) {
+        console.error("Failed to load events:", e);
+        setError(e?.response?.data?.message || "Failed to load events");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
   }, []);
 
   const statusColors = {
@@ -105,14 +93,27 @@ export default function MyAdminEvents() {
         <p className="admin-events-sub">All college events you manage</p>
       </div>
 
-      {events.length === 0 ? (
+      {loading ? (
+        <div className="empty-events">Loading your events…</div>
+      ) : error ? (
+        <div className="empty-events">{error}</div>
+      ) : events.length === 0 ? (
         <div className="empty-events">No events yet. Create one to get started.</div>
       ) : (
         <div className="events-grid">
           {events.map((ev) => (
             <div className="event-card" key={ev.id}>
               <div className="event-image-wrapper">
-                <img src={ev.image} alt={ev.name} className="event-image" />
+                <img
+                  src={ev.image}
+                  alt={ev.name}
+                  className="event-image"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== DEFAULT_IMAGE) {
+                      e.currentTarget.src = DEFAULT_IMAGE;
+                    }
+                  }}
+                />
                 <span
                   className="event-status"
                   style={{ backgroundColor: statusColors[ev.status] }}
@@ -123,7 +124,7 @@ export default function MyAdminEvents() {
               <div className="event-body">
                 <h3 className="event-name">{ev.name}</h3>
                 <div className="event-info">
-                  <FiCalendar /> {new Date(ev.date).toDateString()}
+                  <FiCalendar /> {ev.date ? new Date(ev.date).toDateString() : "-"}
                 </div>
                 <div className="event-info">
                   <FiMapPin /> {ev.location}
@@ -165,9 +166,18 @@ export default function MyAdminEvents() {
               <button className="ae-modal__close" onClick={() => setPreviewEvent(null)} aria-label="Close preview">✕</button>
             </div>
             <div className="ae-modal__body">
-              <img src={previewEvent.image} alt={previewEvent.name} className="ae-modal__image" />
+              <img
+                src={previewEvent.image}
+                alt={previewEvent.name}
+                className="ae-modal__image"
+                onError={(e) => {
+                  if (e.currentTarget.src !== DEFAULT_IMAGE) {
+                    e.currentTarget.src = DEFAULT_IMAGE;
+                  }
+                }}
+              />
               <ul className="ae-modal__list">
-                <li><strong>Date:</strong> {new Date(previewEvent.date).toDateString()}</li>
+                <li><strong>Date:</strong> {previewEvent.date ? new Date(previewEvent.date).toDateString() : "-"}</li>
                 <li><strong>Location:</strong> {previewEvent.location}</li>
                 <li><strong>Registrations:</strong> {previewEvent.registrations}</li>
                 <li><strong>Revenue:</strong> ₹{previewEvent.revenue.toLocaleString()}</li>

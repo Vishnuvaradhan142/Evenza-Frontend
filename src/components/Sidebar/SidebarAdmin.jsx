@@ -23,8 +23,6 @@ const menuMap = {
   ],
   analytics: [
     { label: "Dashboard", path: "analytics/dashboard" },
-    { label: "Event Analytics", path: "analytics/performance" },
-    { label: "Feedback & Ratings", path: "analytics/ratings" },
     { label: "Schedule Manager", path: "analytics/schedule" },
     { label: "All Events", path: "analytics/all-events" },
     { label: "Rejected Events", path: "analytics/rejected" }
