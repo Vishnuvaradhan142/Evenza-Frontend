@@ -22,7 +22,7 @@ import BrowseEvents from "../pages/user/BrowseEvents";
 import SavedEvents from "../pages/user/SavedEvents";
 import MyEvents from "../pages/user/MyEvents";
 import ChatRooms from "../pages/user/ChatRooms";
-import Friends from "../pages/user/Friends";
+// Removed: Friends
 import Notifications from "../pages/user/Notifications";
 import FAQs from "../pages/user/FAQs";
 import Certificates from "../pages/user/BadgesCertificates";
@@ -88,7 +88,7 @@ const AppRoutes = () => {
           <Route path="events/upcoming" element={<UpcomingEvents />} />
           {/* ENGAGEMENT */}
           <Route path="engagement/chat" element={<ChatRooms />} />
-          <Route path="engagement/friends" element={<Friends />} />
+          {/* Removed: Friends page */}
           {/** Earn Rewards removed **/}
           {/* COMMUNITY */}
           <Route path="community/notifications" element={<Notifications />} />
