@@ -4,7 +4,7 @@
 
 /* ---------- Adjustable variables ---------- */
 :root {
-  --page-top-offset: 160px;      /* controls how far the whole "page" is pushed down */
+  --page-top-offset: 200px;      /* controls how far the whole "page" is pushed down (increased from 160px) */
   --bg: #f5f7fb;
   --surface: #ffffff;
   --text: #0b1220;
@@ -12,7 +12,7 @@
   --accent: #4f46e5;
   --border: rgba(11,17,32,0.06);
   --sidebar-w: 300px;
-  --chat-window-h: 420px;      /* smaller chat window height (was 600px) */
+  --chat-window-h: 380px;      /* smaller chat window height (reduced from 420px) */
   --radius: 10px;
   --gap: 14px;
   --transition: 170ms ease;
