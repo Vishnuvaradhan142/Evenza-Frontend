@@ -191,9 +191,7 @@ function Login() {
               </button>
             </form>
 
-            <div className="auth-footer">
-              <p>New to Evenza? <a href="/signup" className="link-hover-effect"> Create an account</a></p>
-            </div>
+            {/* Removed: Create an account link */}
           </div>
         </div>
       </div>
