@@ -13,11 +13,8 @@ const menuMap = {
     { label: "Saved Events", path: "/user/events/saved" },
     { label: "Upcoming Events", path: "/user/events/upcoming" }
   ],
-  engagement: [
-    { label: "Chat Rooms", path: "/user/engagement/chat" },
-    { label: "Friends", path: "/user/engagement/friends" }
-  ],
   community: [
+    { label: "Chat Rooms", path: "/user/community/chat" },
     { label: "Notifications", path: "/user/community/notifications" },
     { label: "FAQs", path: "/user/community/faqs" }
   ],

@@ -6,7 +6,6 @@ import BulbToggle from "../ThemeToggle/BulbToggle";
 const mainCategories = [
   { label: "Home"},
   { label: "Events"},
-  { label: "Engagement"},
   { label: "Community"}
 ];
 

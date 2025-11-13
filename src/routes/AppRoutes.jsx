@@ -86,11 +86,8 @@ const AppRoutes = () => {
           <Route path="events/saved" element={<SavedEvents />} />
           <Route path="events/my-events" element={<MyEvents />} />
           <Route path="events/upcoming" element={<UpcomingEvents />} />
-          {/* ENGAGEMENT */}
-          <Route path="engagement/chat" element={<ChatRooms />} />
-          {/* Removed: Friends page */}
-          {/** Earn Rewards removed **/}
           {/* COMMUNITY */}
+          <Route path="community/chat" element={<ChatRooms />} />
           <Route path="community/notifications" element={<Notifications />} />
           <Route path="community/faqs" element={<FAQs />} />
           {/* ACHIEVEMENTS */}
