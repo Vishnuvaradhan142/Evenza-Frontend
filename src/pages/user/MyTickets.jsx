@@ -45,7 +45,7 @@ const MyTickets = () => {
 
     const fetchTickets = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/tickets/my-tickets`, {
+        const res = await axios.get(`${API_BASE}/tickets/my-tickets`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTickets(res.data || []);

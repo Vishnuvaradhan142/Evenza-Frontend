@@ -25,7 +25,7 @@ const BrowseEvents = () => {
     setError(null);
 
     axios
-      .get(`${API_BASE}/api/events`, { signal: controller.signal })
+      .get(`${API_BASE}/events`, { signal: controller.signal })
       .then((res) => {
         setEvents(Array.isArray(res.data) ? res.data : []);
       })

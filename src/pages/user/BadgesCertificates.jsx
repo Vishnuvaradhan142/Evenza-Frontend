@@ -103,7 +103,7 @@ const BadgesCertificates = () => {
     if (!token) return;
     setLoadingBadges(true);
     try {
-      const res = await fetch(`${API_BASE}/api/achievements/badges`, {
+      const res = await fetch(`${API_BASE}/achievements/badges`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error(`Badges fetch failed ${res.status}`);
@@ -131,7 +131,7 @@ const BadgesCertificates = () => {
     if (!token) return;
     setLoadingCerts(true);
     try {
-      const res = await fetch(`${API_BASE}/api/achievements/certificates`, {
+      const res = await fetch(`${API_BASE}/achievements/certificates`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error(`Certificates fetch failed ${res.status}`);
@@ -152,7 +152,7 @@ const BadgesCertificates = () => {
     if (!token) { showToast('Not authenticated', 'error'); return; }
 
     try {
-      const res = await fetch(`${API_BASE}/api/achievements/certificates/${eventId}/issue`, {
+      const res = await fetch(`${API_BASE}/achievements/certificates/${eventId}/issue`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
       });

@@ -48,7 +48,7 @@ function CalendarView() {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${API_BASE}/api/events/user/joined`, {
+        const res = await axios.get(`${API_BASE}/events/user/joined`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });

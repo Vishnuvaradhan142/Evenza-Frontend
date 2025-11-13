@@ -16,7 +16,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${API_BASE}/api/registrations/check/${event.event_id || event.id}`,
+          `${API_BASE}/registrations/check/${event.event_id || event.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -31,7 +31,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${API_BASE}/api/tickets/event/${event.event_id || event.id}`,
+          `${API_BASE}/tickets/event/${event.event_id || event.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -69,7 +69,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${API_BASE}/api/registrations`,
+        `${API_BASE}/registrations`,
         {
           event_id: event.event_id || event.id,
           ticket_type: "Free",
@@ -105,7 +105,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${API_BASE}/api/registrations`,
+        `${API_BASE}/registrations`,
         {
           event_id: event.event_id || event.id,
           ticket_type: selectedTicket.ticket_type,
