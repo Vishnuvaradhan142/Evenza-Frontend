@@ -35,7 +35,7 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("en-US", options);
 };
 
-const API_BASE = "http://localhost:5000/api/registrations";
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 const WaitlistedEvents = () => {
   const [events, setEvents] = useState([]);

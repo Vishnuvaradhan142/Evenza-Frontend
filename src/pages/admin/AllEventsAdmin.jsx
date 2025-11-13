@@ -18,7 +18,7 @@ export default function MyAdminEvents() {
   const [error, setError] = useState("");
   const [previewEvent, setPreviewEvent] = useState(null);
   const [editEvent, setEditEvent] = useState(null);
-  const BACKEND_ORIGIN = "http://localhost:5000";
+  const BACKEND_ORIGIN = process.env.REACT_APP_API_URL?.replace('/api', '') || "http://localhost:5000";
   const DEFAULT_IMAGE = `${BACKEND_ORIGIN}/uploads/events/default-event.png`;
 
   useEffect(() => {

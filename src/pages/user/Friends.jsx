@@ -3,6 +3,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import './Friends.css';
 
 const Friends = () => {
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
   const [friends, setFriends] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState({});
@@ -15,7 +16,7 @@ const Friends = () => {
     const fetchFriends = async () => {
       if (!token) return;
       try {
-        const res = await fetch("http://localhost:5000/api/friends", {
+        const res = await fetch(`${API_BASE}/friends`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
@@ -32,7 +33,7 @@ const Friends = () => {
     setActiveChat(friend);
     if (!messages[friend.user_id]) {
       try {
-        const res = await fetch(`http://localhost:5000/api/friends/${friend.user_id}/messages`, {
+        const res = await fetch(`${API_BASE}/friends/${friend.user_id}/messages`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
@@ -61,7 +62,7 @@ const Friends = () => {
     setNewMessage("");
 
     try {
-      await fetch(`http://localhost:5000/api/friends/${activeChat.user_id}/messages`, {
+      await fetch(`${API_BASE}/friends/${activeChat.user_id}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

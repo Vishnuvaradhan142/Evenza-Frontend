@@ -4,6 +4,7 @@ import "./Notifications.css";
 import axios from "axios";
 
 const Notifications = () => {
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotif, setSelectedNotif] = useState(null);
@@ -30,7 +31,7 @@ const Notifications = () => {
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/notifications/user", {
+      const res = await axios.get(`${API_BASE}/notifications/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data || []);
@@ -62,7 +63,7 @@ const Notifications = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/notifications/${notif.notification_id}/read`,
+        `${API_BASE}/notifications/${notif.notification_id}/read`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -81,7 +82,7 @@ const Notifications = () => {
   // Clear all notifications (you already had this; preserved)
   const clearNotifications = async () => {
     try {
-      await axios.delete("http://localhost:5000/api/notifications/clear", {
+      await axios.delete(`${API_BASE}/notifications/clear`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications([]);

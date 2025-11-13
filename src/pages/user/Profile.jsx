@@ -5,6 +5,8 @@ import { QRCodeCanvas } from "qrcode.react"; // updated import
 import "./Profile.css";
 
 const Profile = () => {
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+  const FRONTEND_URL = process.env.REACT_APP_FRONTEND_URL || "http://localhost:3000";
   const userId = localStorage.getItem("user_id");
   const [profile, setProfile] = useState(null);
   const [editField, setEditField] = useState(null);
@@ -14,7 +16,7 @@ const Profile = () => {
 
   const loadProfile = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/profile/${userId}`);
+      const res = await axios.get(`${API_BASE}/profile/${userId}`);
       setProfile(res.data);
     } catch (err) {
       console.error("Error loading profile:", err);
@@ -42,23 +44,23 @@ const Profile = () => {
           setPasswordError("Password must be at least 8 characters, include 1 uppercase letter and 1 symbol");
           return;
         }
-        await axios.put(`http://localhost:5000/api/profile/${userId}/password`, {
+        await axios.put(`${API_BASE}/profile/${userId}/password`, {
           oldPassword: formData.oldPassword,
           newPassword: formData.newPassword,
         });
       } else if (field === "contact") {
-        await axios.put(`http://localhost:5000/api/profile/${userId}/contact`, {
+        await axios.put(`${API_BASE}/profile/${userId}/contact`, {
           contact_phone: formData.contact_phone,
         });
       } else if (field === "bio") {
-        await axios.put(`http://localhost:5000/api/profile/${userId}/bio`, {
+        await axios.put(`${API_BASE}/profile/${userId}/bio`, {
           bio: formData.bio,
         });
       } else if (field === "avatar") {
         if (!formData.avatar) return alert("Please select an image");
         const data = new FormData();
         data.append("avatar", formData.avatar);
-        await axios.put(`http://localhost:5000/api/profile/${userId}/avatar`, data, {
+        await axios.put(`${API_BASE}/profile/${userId}/avatar`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
@@ -156,7 +158,7 @@ const Profile = () => {
         <div className="profile-qr" style={{ textAlign: "center", marginTop: "20px" }}>
           <strong>Share Profile:</strong>
           <div style={{ display: "inline-block", marginTop: "10px" }}>
-            <QRCodeCanvas value={`http://localhost:3000/profile/${userId}`} size={150} />
+            <QRCodeCanvas value={`${FRONTEND_URL}/profile/${userId}`} size={150} />
           </div>
         </div>
       </div>

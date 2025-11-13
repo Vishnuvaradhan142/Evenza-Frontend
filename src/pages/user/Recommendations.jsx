@@ -23,8 +23,9 @@ const Recommendations = () => {
 
     if (showGreeting) setShowGreeting(false);
 
-    // Call Python backend
-    fetch("http://localhost:8000/chat", {
+    // Call Python AI backend
+    const AI_API_BASE = process.env.REACT_APP_AI_API_URL || "http://localhost:8000";
+    fetch(`${AI_API_BASE}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: input, user_id: 1 }),

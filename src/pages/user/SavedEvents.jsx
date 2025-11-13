@@ -56,8 +56,9 @@ const SavedEvents = () => {
   useEffect(() => {
     const fetchSavedEvents = async () => {
       try {
+        const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/saved-events/my", {
+        const res = await axios.get(`${API_BASE}/saved-events/my`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEvents(res.data);
@@ -72,8 +73,9 @@ const SavedEvents = () => {
 
   const removeEvent = async (eventId) => {
     try {
+      const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/saved-events/remove/${eventId}`, {
+      await axios.delete(`${API_BASE}/saved-events/remove/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEvents(events.filter((event) => event.event_id !== eventId));

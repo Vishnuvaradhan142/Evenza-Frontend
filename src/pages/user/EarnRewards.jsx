@@ -6,6 +6,7 @@ import { FaGift, FaCreditCard } from "react-icons/fa";
 import { RiCoinsFill } from "react-icons/ri";
 
 const EarnRewards = () => {
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
   const [points, setPoints] = useState(0);
   const [tasks, setTasks] = useState([]);
   const [claimedWays, setClaimedWays] = useState([]);
@@ -23,7 +24,7 @@ const EarnRewards = () => {
   const fetchTasks = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/earnRewards/tasks", {
+      const res = await axios.get(`${API_BASE}/earnRewards/tasks`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(res.data);
@@ -37,7 +38,7 @@ const EarnRewards = () => {
   const fetchPoints = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/earnRewards/points", {
+      const res = await axios.get(`${API_BASE}/earnRewards/points`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPoints(res.data.totalPoints || 0);
@@ -61,7 +62,7 @@ const EarnRewards = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:5000/api/earnRewards/complete-task/${task.task_id}`,
+        `${API_BASE}/earnRewards/complete-task/${task.task_id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

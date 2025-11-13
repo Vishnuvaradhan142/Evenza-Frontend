@@ -45,8 +45,9 @@ const UpcomingEvents = () => {
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
       try {
+        const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/events/user/upcoming", {
+        const res = await axios.get(`${API_BASE}/events/user/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEvents(res.data);

@@ -4,7 +4,7 @@ import axios from "axios";
 import EventDetailsModal from "../../components/user/EventDetailsModal";
 import "./MyEvents.css";
 
-const API_BASE = "http://localhost:5000/api/events"; // adjust to your backend
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api"; // adjust to your backend
 
 const MyEvents = () => {
   const [myEvents, setMyEvents] = useState([]);

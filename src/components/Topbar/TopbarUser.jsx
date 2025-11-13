@@ -28,11 +28,12 @@ const TopbarUser = ({ onMainCategoryHover, onMainCategoryLeave }) => {
 
   // ---------------- Logout (auto set Offline + clear session) ----------------
   const handleLogout = async () => {
+    const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
     const token = localStorage.getItem("token");
 
     if (token) {
       try {
-        await fetch("http://localhost:5000/api/auth/logout", {
+        await fetch(`${API_BASE}/auth/logout`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
