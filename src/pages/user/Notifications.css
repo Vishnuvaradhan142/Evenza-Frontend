@@ -38,7 +38,7 @@
 /* ---------- Page layout ---------- */
 /* Increased top padding so the page sits lower in the viewport */
 .notifications-page {
-  padding: 4.5rem 2rem 2rem; /* <- increased top padding */
+  padding: 10rem 2rem 2rem; /* <- increased top padding */
   min-height: calc(100vh - 3.5rem); /* keeps page visually lower while allowing scroll */
   background: var(--page-bg);
   animation: pageFadeIn 360ms ease;

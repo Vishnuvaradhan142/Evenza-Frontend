@@ -1,88 +1,100 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FiSearch, FiEdit, FiArchive, FiRefreshCw, FiTrash2, FiDownload } from 'react-icons/fi';
+import { FiSearch, FiCalendar, FiMapPin, FiUsers } from 'react-icons/fi';
 import API from '../../api';
 import './AllEvents.css';
 
-const SAMPLE_EVENTS = [
-  { id: 201, title: 'Autumn Innovators Summit', date: '2025-11-12', location: 'London', attendees: 420, status: 'published' },
-  { id: 202, title: 'React Conf - Mini', date: '2025-03-21', location: 'Remote', attendees: 780, status: 'draft' },
-  { id: 203, title: 'Startup Pitch Night', date: '2025-02-14', location: 'San Francisco', attendees: 150, status: 'archived', archived_at: '2025-09-10' },
-];
-
-const STORAGE_KEY = 'allEvents_v1';
-
 export default function AllEvents() {
-  // we'll open an inline edit modal for owners instead of navigating to admin routes
-  // const navigate = useNavigate();
-  const [editingEvent, setEditingEvent] = useState(null);
-  const [editForm, setEditForm] = useState({ title: '', date: '', location: '', attendees: '' });
-  const [events, setEvents] = useState(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : SAMPLE_EVENTS;
-  });
+  const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  }, [events]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await API.get('/events').catch(() => null);
-        if (!mounted) return;
-        if (res && Array.isArray(res.data)) setEvents(res.data);
-      } catch (e) {
-        console.error('Error loading events:', e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
+    fetchEvents();
   }, []);
 
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching all events for owner');
+      const response = await API.get('/events/all');
+      console.log('Events response:', response.data);
+      setEvents(response.data || []);
+    } catch (err) {
+      console.error('Error loading events:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEventStatus = (startTime, endTime) => {
+    const now = new Date();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    if (now < start) return 'upcoming';
+    if (now >= start && now <= end) return 'ongoing';
+    return 'completed';
+  };
+
   const filteredEvents = useMemo(() => {
+    if (!searchQuery && statusFilter === 'all') return events;
     return events.filter(ev => {
-      if (filter === 'published' && ev.status !== 'published') return false;
-      if (filter === 'draft' && ev.status !== 'draft') return false;
-      if (filter === 'archived' && ev.status !== 'archived') return false;
-      if (searchQuery && !`${ev.title} ${ev.location}`.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      return true;
+      const searchText = `${ev.title} ${ev.description || ''} ${ev.location || ''}`.toLowerCase();
+      const matchesSearch = !searchQuery || searchText.includes(searchQuery.toLowerCase());
+      
+      const status = getEventStatus(ev.start_time, ev.end_time);
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
     });
-  }, [events, searchQuery, filter]);
+  }, [events, searchQuery, statusFilter]);
 
-  const archiveEvent = async (id) => {
-    try { await API.post(`/events/${id}/archive`).catch(() => null); } catch (e) {}
-    setEvents(state => state.map(ev => (ev.id === id ? { ...ev, status: 'archived', archived_at: new Date().toISOString().slice(0, 10) } : ev)));
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const restoreEvent = async (id) => {
-    try { await API.post(`/events/${id}/restore`).catch(() => null); } catch (e) {}
-    setEvents(state => state.map(ev => (ev.id === id ? { ...ev, status: 'published', archived_at: undefined } : ev)));
+  const parseLocations = (locations) => {
+    try {
+      if (typeof locations === 'string') {
+        return JSON.parse(locations);
+      }
+      return locations;
+    } catch (e) {
+      return [];
+    }
   };
 
-  const deleteEvent = async (id) => {
-    try { await API.delete(`/events/${id}`).catch(() => null); } catch (e) {}
-    setEvents(state => state.filter(ev => ev.id !== id));
-    setConfirmDelete(null);
+  const parseSessions = (sessions) => {
+    try {
+      if (typeof sessions === 'string') {
+        return JSON.parse(sessions);
+      }
+      return sessions;
+    } catch (e) {
+      return [];
+    }
   };
 
-  const exportCSV = () => {
-    const header = ['id', 'title', 'date', 'location', 'attendees', 'status', 'archived_at'].join(',');
-    const rows = events.map(e => [e.id, `"${e.title.replace(/"/g, '""')}"`, e.date, `"${(e.location || '').replace(/"/g, '""')}"`, e.attendees || 0, e.status, e.archived_at || ''].join(','));
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `events-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const parseDocuments = (documents) => {
+    try {
+      if (typeof documents === 'string') {
+        return JSON.parse(documents);
+      }
+      return documents;
+    } catch (e) {
+      return [];
+    }
   };
 
   return (
@@ -90,86 +102,209 @@ export default function AllEvents() {
       <header className="ae-header">
         <div>
           <h2>All Events</h2>
-          <p className="muted">View and manage all events across the platform.</p>
+          <p className="muted">View all events across the platform.</p>
         </div>
         <div className="ae-controls">
           <div className="ae-search">
             <FiSearch />
-            <input placeholder="Search events..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <input 
+              placeholder="Search events..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+            />
           </div>
-          <select value={filter} onChange={e => setFilter(e.target.value)}>
-            <option value="all">All</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
+          <select 
+            value={statusFilter} 
+            onChange={e => setStatusFilter(e.target.value)}
+            className="status-filter"
+          >
+            <option value="all">All Status</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
           </select>
-          <button className="btn" onClick={exportCSV}><FiDownload /> Export</button>
         </div>
       </header>
+
       <div className="ae-list card">
         {loading && <div className="ae-loading">Loading events...</div>}
-        {!loading && filteredEvents.length === 0 && <div className="empty">No events found.</div>}
-        {filteredEvents.map(ev => (
-          <div className={`ae-item ${ev.status}`} key={ev.id}>
-            <div className="main">
-              <div className="title">{ev.title} {ev.status === 'archived' && <span className="badge">Archived</span>}</div>
-              <div className="meta muted">{ev.date} • {ev.location} • {ev.attendees || 0} attendees</div>
+        {error && <div className="empty" style={{color: '#ef4444'}}>{error}</div>}
+        {!loading && !error && filteredEvents.length === 0 && <div className="empty">No events found.</div>}
+        
+        {!loading && !error && filteredEvents.map(ev => {
+          const status = getEventStatus(ev.start_time, ev.end_time);
+          return (
+            <div 
+              className={`ae-item ${status}`} 
+              key={ev.event_id}
+              onClick={() => setSelectedEvent(ev)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="event-main">
+                <div className="event-header">
+                  <h3 className="event-title">{ev.title}</h3>
+                  <span className={`status-badge ${status}`}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </span>
+                </div>
+                {ev.description && (
+                  <p className="event-description">{ev.description}</p>
+                )}
+                <div className="event-meta">
+                  <div className="meta-item">
+                    <FiCalendar />
+                    <span>{formatDate(ev.start_time)} - {formatDate(ev.end_time)}</span>
+                  </div>
+                  {ev.location && (
+                    <div className="meta-item">
+                      <FiMapPin />
+                      <span>{ev.location}</span>
+                    </div>
+                  )}
+                  {ev.capacity && (
+                    <div className="meta-item">
+                      <FiUsers />
+                      <span>Capacity: {ev.capacity}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="actions">
-              <button className="btn" onClick={() => {
-                setEditingEvent(ev);
-                setEditForm({ title: ev.title||'', date: ev.date||'', location: ev.location||'', attendees: ev.attendees||0 });
-              }}><FiEdit /> Edit</button>
-              {ev.status !== 'archived' ? (
-                <button className="btn" onClick={() => archiveEvent(ev.id)}><FiArchive /> Archive</button>
-              ) : (
-                <button className="btn" onClick={() => restoreEvent(ev.id)}><FiRefreshCw /> Restore</button>
-              )}
-              <button className="btn danger" onClick={() => setConfirmDelete(ev.id)}><FiTrash2 /> Delete</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      {confirmDelete && (
-        <div className="ae-modal">
-          <div className="ae-modal-card">
-            <h3>Delete event?</h3>
-            <p>This will permanently delete the event. This action cannot be undone.</p>
-            <div className="row">
-              <button className="btn" onClick={() => setConfirmDelete(null)}>Cancel</button>
-              <button className="btn danger" onClick={() => deleteEvent(confirmDelete)}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {editingEvent && (
-        <div className="ae-modal">
-          <div className="ae-modal-card">
-            <h3>Edit event</h3>
-            <div style={{display:'grid',gap:10}}>
-              <label>Title
-                <input value={editForm.title} onChange={e=>setEditForm(f=>({...f,title:e.target.value}))} />
-              </label>
-              <label>Date
-                <input type="date" value={editForm.date} onChange={e=>setEditForm(f=>({...f,date:e.target.value}))} />
-              </label>
-              <label>Location
-                <input value={editForm.location} onChange={e=>setEditForm(f=>({...f,location:e.target.value}))} />
-              </label>
-              <label>Attendees
-                <input type="number" value={editForm.attendees} onChange={e=>setEditForm(f=>({...f,attendees:parseInt(e.target.value||0,10)}))} />
-              </label>
+      {/* Event Details Modal */}
+      {selectedEvent && (
+        <div className="ae-modal" onClick={() => setSelectedEvent(null)}>
+          <div className="ae-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{selectedEvent.title}</h3>
+              <button className="close-btn" onClick={() => setSelectedEvent(null)}>
+                ×
+              </button>
             </div>
-            <div className="row" style={{marginTop:16}}>
-              <button className="btn" onClick={()=> setEditingEvent(null)}>Cancel</button>
-              <button className="btn" onClick={async ()=>{
-                // save changes to API if available, else update local state
-                const updated = { ...editingEvent, title: editForm.title, date: editForm.date, location: editForm.location, attendees: editForm.attendees };
-                try{ await API.put(`/events/${editingEvent.id}`, updated).catch(()=>null); }catch(e){}
-                setEvents(s=> s.map(ev=> ev.id===editingEvent.id ? updated : ev));
-                setEditingEvent(null);
-              }}>Save</button>
+            
+            <div className="modal-body">
+              {selectedEvent.description && (
+                <div className="detail-section">
+                  <h4>Description</h4>
+                  <p>{selectedEvent.description}</p>
+                </div>
+              )}
+
+              <div className="detail-section">
+                <h4>Event Details</h4>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <strong>Start Time:</strong>
+                    <span>{formatDate(selectedEvent.start_time)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>End Time:</strong>
+                    <span>{formatDate(selectedEvent.end_time)}</span>
+                  </div>
+                  {selectedEvent.capacity && (
+                    <div className="detail-item">
+                      <strong>Capacity:</strong>
+                      <span>{selectedEvent.capacity} attendees</span>
+                    </div>
+                  )}
+                  <div className="detail-item">
+                    <strong>Category:</strong>
+                    <span>{selectedEvent.category || 'General'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Status:</strong>
+                    <span className={`status-badge ${getEventStatus(selectedEvent.start_time, selectedEvent.end_time)}`}>
+                      {getEventStatus(selectedEvent.start_time, selectedEvent.end_time).charAt(0).toUpperCase() + 
+                       getEventStatus(selectedEvent.start_time, selectedEvent.end_time).slice(1)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedEvent.locations && parseLocations(selectedEvent.locations).length > 0 && (
+                <div className="detail-section">
+                  <h4>Locations</h4>
+                  {parseLocations(selectedEvent.locations).map((loc, idx) => (
+                    <div key={idx} className="location-item">
+                      {typeof loc === 'string' ? (
+                        <p>{loc}</p>
+                      ) : (
+                        <>
+                          <p><strong>{loc.name || `Location ${idx + 1}`}</strong></p>
+                          {loc.address && <p>{loc.address}</p>}
+                          {loc.city && <p>{loc.city}</p>}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedEvent.sessions && parseSessions(selectedEvent.sessions).length > 0 && (
+                <div className="detail-section">
+                  <h4>Sessions</h4>
+                  {parseSessions(selectedEvent.sessions).map((session, idx) => (
+                    <div key={idx} className="session-item">
+                      <p><strong>{session.title || session.name || `Session ${idx + 1}`}</strong></p>
+                      {session.time && <p>Time: {session.time}</p>}
+                      {session.speaker && <p>Speaker: {session.speaker}</p>}
+                      {session.description && <p>{session.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedEvent.documents && parseDocuments(selectedEvent.documents).length > 0 && (
+                <div className="detail-section">
+                  <h4>Documents</h4>
+                  <div className="documents-list">
+                    {parseDocuments(selectedEvent.documents).map((doc, idx) => (
+                      <div key={idx} className="document-item">
+                        {typeof doc === 'string' ? doc : doc.name || `Document ${idx + 1}`}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedEvent.image_path && (
+                <div className="detail-section">
+                  <h4>Event Image</h4>
+                  <img 
+                    src={selectedEvent.image_path} 
+                    alt={selectedEvent.title}
+                    className="event-image"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              )}
+
+              <div className="detail-section">
+                <h4>Additional Information</h4>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <strong>Event ID:</strong>
+                    <span>{selectedEvent.event_id}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Created:</strong>
+                    <span>{new Date(selectedEvent.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Created By:</strong>
+                    <span>User #{selectedEvent.created_by}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-close" onClick={() => setSelectedEvent(null)}>
+                Close
+              </button>
             </div>
           </div>
         </div>

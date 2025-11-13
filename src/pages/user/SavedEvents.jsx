@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import EventDetailsModal from "../../components/user/EventDetailsModal";
 import "./SavedEvents.css";
 
 // Icons
@@ -49,6 +50,8 @@ const formatDate = (dateString) => {
 const SavedEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSavedEvents = async () => {
@@ -79,6 +82,16 @@ const SavedEvents = () => {
     }
   };
 
+  const handleCardClick = (event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  };
+
   return (
     <div className="saved-events-page">
       <h1 className="page-title">Saved Events</h1>
@@ -92,7 +105,19 @@ const SavedEvents = () => {
         <div className="event-grid">
           {events.length > 0 ? (
             events.map((event) => (
-              <div className="event-card" key={event.saved_id}>
+              <div 
+                className="event-card" 
+                key={event.saved_id}
+                onClick={() => handleCardClick(event)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleCardClick(event);
+                  }
+                }}
+              >
                 <img
                   src={getPlaceholderImage(event.category)}
                   alt={event.title}
@@ -121,10 +146,13 @@ const SavedEvents = () => {
 
                   <button
                     className="remove-btn"
-                    onClick={() => removeEvent(event.event_id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeEvent(event.event_id);
+                    }}
                   >
                     <BookmarkIcon />
-                    <span>Remove from Saved</span>
+                    <span>Remove</span>
                   </button>
                 </div>
               </div>
@@ -139,6 +167,15 @@ const SavedEvents = () => {
             </div>
           )}
         </div>
+      )}
+
+      {isModalOpen && selectedEvent && (
+        <EventDetailsModal
+          event={selectedEvent}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          hideRegisterButton={false}
+        />
       )}
     </div>
   );

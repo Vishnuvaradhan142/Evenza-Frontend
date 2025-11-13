@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./Dashboard.css";
 import axios from "axios";
-import { FiCalendar, FiBell, FiUser } from "react-icons/fi";
+import { FiCalendar, FiBell, FiUser, FiTrendingUp, FiAward, FiHeart } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 const categoriesList = [
   "Cultural Programs",
@@ -28,9 +31,11 @@ const formatDateTime = (dateString) => {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [allEvents, setAllEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [savedEvents, setSavedEvents] = useState([]);
   const [joinedCount, setJoinedCount] = useState(0);
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -53,45 +58,63 @@ const Dashboard = () => {
         setLoading(true);
 
         // ✅ Fetch all events
-        const allEventsRes = await axios.get("http://localhost:5000/api/events", {
+        const allEventsRes = await axios.get(`${API_BASE}/events`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("All Events:", allEventsRes.data);
         setAllEvents(allEventsRes.data || []);
 
         // ✅ Fetch upcoming events
-        const upcomingEventsRes = await axios.get("http://localhost:5000/api/events/user/upcoming", {
+        const upcomingEventsRes = await axios.get(`${API_BASE}/events/user/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("Upcoming Events:", upcomingEventsRes.data);
         setUpcomingEvents(upcomingEventsRes.data || []);
 
+        // ✅ Fetch saved events
+        try {
+          const savedEventsRes = await axios.get(`${API_BASE}/saved-events/my`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          console.log("Saved Events:", savedEventsRes.data);
+          setSavedEvents(savedEventsRes.data || []);
+        } catch (err) {
+          console.error("Error fetching saved events:", err);
+          setSavedEvents([]);
+        }
+
         // ✅ Joined count
-        const joinedCountRes = await axios.get("http://localhost:5000/api/events/stats/joined", {
+        const joinedCountRes = await axios.get(`${API_BASE}/events/stats/joined`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("Joined Count:", joinedCountRes.data);
         setJoinedCount(joinedCountRes.data?.joinedCount ?? 0);
 
         // ✅ Upcoming count
-        const upcomingCountRes = await axios.get("http://localhost:5000/api/events/stats/upcoming", {
+        const upcomingCountRes = await axios.get(`${API_BASE}/events/stats/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("Upcoming Count:", upcomingCountRes.data);
         setUpcomingCount(upcomingCountRes.data?.upcomingCount ?? (upcomingEventsRes.data ? upcomingEventsRes.data.length : 0));
 
         // ✅ Notifications count
-        const notifRes = await axios.get("http://localhost:5000/api/notifications/user", {
+        const notifRes = await axios.get(`${API_BASE}/notifications/user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("Notifications:", notifRes.data);
         setNotificationCount(Array.isArray(notifRes.data) ? notifRes.data.length : 0);
 
         // ✅ User details
-        const userRes = await axios.get("http://localhost:5000/api/auth/me", {
+        const userRes = await axios.get(`${API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("User:", userRes.data);
         setUsername(userRes.data?.username ?? "");
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         if (err.response?.status === 401 || err.response?.status === 403) {
           localStorage.clear();
-          window.location.href = "/login";
+          navigate("/login");
           return;
         }
       } finally {
@@ -125,24 +148,35 @@ const Dashboard = () => {
 
   const recentUpcomingEvents = upcomingEvents.slice(0, 3);
 
-  const goTo = (url) => {
-    window.location.href = url;
+  const handleEventClick = (eventId) => {
+    navigate(`/user/events/browse`);
   };
 
   return (
-    <div className="advanced-dashboard" style={{ marginTop: "2rem" }}>
+    <div className="advanced-dashboard">
       {/* Header */}
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>Welcome back, {username} 👋</h1>
+          <div className="welcome-section">
+            <h1>Welcome back, {username}! 👋</h1>
+            <p className="subtitle">Here's what's happening with your events</p>
+          </div>
           <div className="user-actions">
-            <a className="icon-btn notification-btn" href="/user/community/notifications" aria-label="Notifications">
+            <button 
+              className="icon-btn notification-btn" 
+              onClick={() => navigate("/user/community/notifications")}
+              aria-label="Notifications"
+            >
               <FiBell />
-              <span className="badge">{notificationCount}</span>
-            </a>
-            <a className="user-avatar" href="/user/profile" aria-label="Profile">
+              {notificationCount > 0 && <span className="badge">{notificationCount}</span>}
+            </button>
+            <button 
+              className="user-avatar" 
+              onClick={() => navigate("/user/profile")}
+              aria-label="Profile"
+            >
               <FiUser />
-            </a>
+            </button>
           </div>
         </div>
       </header>
@@ -151,22 +185,37 @@ const Dashboard = () => {
       <section className="stats-section">
         <h2 className="section-title">Your Overview</h2>
         <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon"><FiCalendar /></div>
+          <div className="stat-card" onClick={() => navigate("/user/events/my-events")}>
+            <div className="stat-icon events-icon">
+              <FiCalendar />
+            </div>
             <div className="stat-content">
               <h3>{joinedCount}</h3>
               <p>Joined Events</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon"><FiCalendar /></div>
+          <div className="stat-card" onClick={() => navigate("/user/events/upcoming")}>
+            <div className="stat-icon upcoming-icon">
+              <FiTrendingUp />
+            </div>
             <div className="stat-content">
               <h3>{upcomingCount}</h3>
-              <p>Upcoming</p>
+              <p>Upcoming Events</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon"><FiBell /></div>
+          <div className="stat-card" onClick={() => navigate("/user/events/saved")}>
+            <div className="stat-icon saved-icon">
+              <FiHeart />
+            </div>
+            <div className="stat-content">
+              <h3>{savedEvents.length}</h3>
+              <p>Saved Events</p>
+            </div>
+          </div>
+          <div className="stat-card" onClick={() => navigate("/user/badges")}>
+            <div className="stat-icon badges-icon">
+              <FiAward />
+            </div>
             <div className="stat-content">
               <h3>{notificationCount}</h3>
               <p>Notifications</p>
@@ -182,29 +231,36 @@ const Dashboard = () => {
             <h2 className="section-title">Your Upcoming Events</h2>
             <button
               className="view-all-btn"
-              onClick={() => goTo("/user/events/upcoming")}
+              onClick={() => navigate("/user/events/upcoming")}
             >
-              View All
+              View All →
             </button>
           </div>
 
           <div className="event-scroll-container">
             {recentUpcomingEvents.map((event) => (
-              <div key={event.event_id} className="event-card">
+              <div 
+                key={event.event_id} 
+                className="event-card"
+                onClick={() => handleEventClick(event.event_id)}
+              >
                 <div className="event-image-container">
                   <img
                     src={event.image || "https://source.unsplash.com/400x250/?event"}
                     alt={event.title}
                   />
+                  <span className="status-badge upcoming">Upcoming</span>
                 </div>
                 <div className="event-details">
                   <div className="event-meta">
-                    <span>{formatDateTime(event.start_time)}</span>
-                    <span>{event.category}</span>
-                    <span className="status-badge upcoming">Upcoming</span>
+                    <span className="meta-date">
+                      <FiCalendar size={14} />
+                      {formatDateTime(event.start_time)}
+                    </span>
+                    <span className="meta-category">{event.category}</span>
                   </div>
                   <h3>{event.title}</h3>
-                  <p>{event.location}</p>
+                  <p className="event-location">{event.location}</p>
                 </div>
               </div>
             ))}
@@ -239,32 +295,54 @@ const Dashboard = () => {
           <h2 className="section-title">Discover More Events</h2>
           <button
             className="view-all-btn"
-            onClick={() => goTo("/user/events/browse")}
+            onClick={() => navigate("/user/events/browse")}
           >
-            View All
+            View All →
           </button>
         </div>
 
-        <div className="event-scroll-container">
-          {filteredEvents.slice(0, 3).map((event) => (
-            <div key={event.event_id} className="event-card">
-              <div className="event-image-container">
-                <img
-                  src={event.image || "https://source.unsplash.com/400x250/?event"}
-                  alt={event.title}
-                />
-              </div>
-              <div className="event-details">
-                <div className="event-meta">
-                  <span>{formatDateTime(event.start_time)}</span>
-                  <span>{event.category}</span>
+        {filteredEvents.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">🎉</div>
+            <h3>No Events Available</h3>
+            <p>There are currently no events to display. Check back later or browse all events!</p>
+            <button 
+              className="view-all-btn" 
+              onClick={() => navigate("/user/events/browse")}
+              style={{ marginTop: "1rem" }}
+            >
+              Browse All Events
+            </button>
+          </div>
+        ) : (
+          <div className="event-scroll-container">
+            {filteredEvents.slice(0, 6).map((event) => (
+              <div 
+                key={event.event_id} 
+                className="event-card"
+                onClick={() => handleEventClick(event.event_id)}
+              >
+                <div className="event-image-container">
+                  <img
+                    src={event.image || "https://source.unsplash.com/400x250/?event"}
+                    alt={event.title}
+                  />
                 </div>
-                <h3>{event.title}</h3>
-                <p>{event.location}</p>
+                <div className="event-details">
+                  <div className="event-meta">
+                    <span className="meta-date">
+                      <FiCalendar size={14} />
+                      {formatDateTime(event.start_time)}
+                    </span>
+                    <span className="meta-category">{event.category}</span>
+                  </div>
+                  <h3>{event.title}</h3>
+                  <p className="event-location">{event.location}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

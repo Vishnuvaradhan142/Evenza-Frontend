@@ -1,6 +1,7 @@
 // MyEvents.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
+import EventDetailsModal from "../../components/user/EventDetailsModal";
 import "./MyEvents.css";
 
 const API_BASE = "http://localhost:5000/api/events"; // adjust to your backend
@@ -8,6 +9,41 @@ const API_BASE = "http://localhost:5000/api/events"; // adjust to your backend
 const MyEvents = () => {
   const [myEvents, setMyEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Get image for event
+  const getImageForEvent = useCallback((ev) => {
+    if (ev.image_path) return ev.image_path;
+    if (ev.image) return ev.image;
+    const keyword = encodeURIComponent(ev.category || ev.title || "event");
+    return `https://source.unsplash.com/600x400/?${keyword}`;
+  }, []);
+
+  // Get event status based on start and end times
+  const getEventStatus = useCallback((event) => {
+    const now = new Date();
+    const startTime = new Date(event.start_time);
+    const endTime = new Date(event.end_time);
+
+    if (now < startTime) {
+      return { label: "Upcoming", className: "status-upcoming" };
+    } else if (now >= startTime && now <= endTime) {
+      return { label: "Ongoing", className: "status-ongoing" };
+    } else {
+      return { label: "Completed", className: "status-completed" };
+    }
+  }, []);
+
+  const handleCardClick = (event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  };
 
   // Fetch joined events from backend
   useEffect(() => {
@@ -31,10 +67,6 @@ const MyEvents = () => {
     return <div className="loading">Loading your events...</div>;
   }
 
-  const handleCardClick = (eventId) => {
-    window.location.href = `/events/${eventId}`;
-  };
-
   return (
     <div className="my-events-page">
       <h1 className="page-title">My Events</h1>
@@ -48,24 +80,33 @@ const MyEvents = () => {
             <div
               className="event-card"
               key={event.event_id}
-              onClick={() => handleCardClick(event.event_id)}
+              onClick={() => handleCardClick(event)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  handleCardClick(event.event_id);
+                  handleCardClick(event);
                 }
               }}
             >
-              {/* Placeholder image since backend doesn’t return one */}
               <img
-                src="https://source.unsplash.com/random/400x200?event"
+                src={getImageForEvent(event)}
                 alt={event.title}
                 loading="lazy"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  const keyword = encodeURIComponent(event.category || event.title || "event");
+                  e.target.src = `https://source.unsplash.com/600x400/?${keyword}`;
+                }}
               />
               <div className="event-details">
-                <span className="event-cat">{event.category}</span>
+                <div className="event-header">
+                  <span className="event-cat">{event.category}</span>
+                  <span className={`event-status ${getEventStatus(event).className}`}>
+                    {getEventStatus(event).label}
+                  </span>
+                </div>
                 <h3>{event.title}</h3>
                 <p className="event-date">
                   {new Date(event.start_time).toLocaleDateString()} •{" "}
@@ -87,6 +128,15 @@ const MyEvents = () => {
           <p className="no-events">You have not registered for any events yet.</p>
         )}
       </div>
+
+      {isModalOpen && selectedEvent && (
+        <EventDetailsModal
+          event={selectedEvent}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          hideRegisterButton={true}
+        />
+      )}
     </div>
   );
 };

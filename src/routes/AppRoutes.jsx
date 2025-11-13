@@ -21,8 +21,6 @@ import Calendar from "../pages/user/CalendarView";
 import BrowseEvents from "../pages/user/BrowseEvents";
 import SavedEvents from "../pages/user/SavedEvents";
 import MyEvents from "../pages/user/MyEvents";
-import MyTickets from "../pages/user/MyTickets";
-import WaitlistedEvents from "../pages/user/WaitlistedEvents";
 import ChatRooms from "../pages/user/ChatRooms";
 import Friends from "../pages/user/Friends";
 import Notifications from "../pages/user/Notifications";
@@ -56,9 +54,9 @@ import OwnerProfile from "../pages/owner/OwnerProfile";
 // Removed: SiteSettings, DesignEditor, EventCategory, RolesManager, ManageAdmins, ManageUsers, LoginLogs, ActivityLogs, EventsAnalytics, ReportsIssues, RevenueDashboard
 
 import AdminRequests from "../pages/owner/AdminRequests";
-import OwnerNotifications from "../pages/owner/OwnerNotifications";
 import AllEvents from "../pages/owner/AllEvents";
 import PublicReviews from "../pages/owner/PublicReviews";
+import OwnerChatRooms from "../pages/owner/OwnerChatRooms";
 
 const AppRoutes = () => {
   return (
@@ -87,8 +85,6 @@ const AppRoutes = () => {
           <Route path="events/browse" element={<BrowseEvents />} />
           <Route path="events/saved" element={<SavedEvents />} />
           <Route path="events/my-events" element={<MyEvents />} />
-          <Route path="events/my-tickets" element={<MyTickets />} />
-          <Route path="events/waitlisted" element={<WaitlistedEvents />} />
           <Route path="events/upcoming" element={<UpcomingEvents />} />
           {/* ENGAGEMENT */}
           <Route path="engagement/chat" element={<ChatRooms />} />
@@ -167,12 +163,12 @@ const AppRoutes = () => {
           {/* Removed: site, design, category, roles */}
           {/* Controls */}
           <Route path="controls/requests" element={<AdminRequests />} />
-          <Route path="controls/notifications" element={<OwnerNotifications />} />
           {/* Analytics - removed */}
           {/* Oversight */}
           <Route path="oversight/events" element={<AllEvents />} />
           <Route path="oversight/reviews" element={<PublicReviews />} />
-          {/* Communication - removed */}
+          {/* Communication */}
+          <Route path="communication/chatrooms" element={<OwnerChatRooms />} />
           {/* Profile */}
           <Route path="profile" element={<OwnerProfile />} />
           <Route path="logout" element={<Logout />} />

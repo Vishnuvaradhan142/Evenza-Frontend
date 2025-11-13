@@ -44,14 +44,14 @@ const TopbarOwner = () => {
         <button onClick={() => navigate("/owner/controls/requests")}>
           Admin Requests
         </button>
-        <button onClick={() => navigate("/owner/controls/notifications")}>
-          Notifications
-        </button>
         <button onClick={() => navigate("/owner/oversight/events")}>
           All Events
         </button>
         <button onClick={() => navigate("/owner/oversight/reviews")}>
           Public Reviews
+        </button>
+        <button onClick={() => navigate("/owner/communication/chatrooms")}>
+          ChatRooms
         </button>
       </nav>
 

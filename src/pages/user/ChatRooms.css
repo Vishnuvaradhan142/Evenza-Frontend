@@ -4,7 +4,7 @@
 
 /* ---------- Adjustable variables ---------- */
 :root {
-  --page-top-offset: 56px;      /* controls how far the whole "page" is pushed down */
+  --page-top-offset: 160px;      /* controls how far the whole "page" is pushed down */
   --bg: #f5f7fb;
   --surface: #ffffff;
   --text: #0b1220;

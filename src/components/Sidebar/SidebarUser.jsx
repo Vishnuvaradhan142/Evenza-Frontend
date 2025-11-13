@@ -5,16 +5,13 @@ import '../../styles/sidebar.css';
 const menuMap = {
   home: [
     { label: "Dashboard", path: "/user/home/dashboard" },
-    { label: "AI Recommendations", path: "/user/home/recommendations" },
     { label: "Calendar View", path: "/user/home/calendar" }
   ],
   events: [
     { label: "Browse Events", path: "/user/events/browse" },
     { label: "My Events", path: "/user/events/my-events" },
-    { label: "My Tickets", path: "/user/events/my-tickets" },
     { label: "Saved Events", path: "/user/events/saved" },
-    { label: "Upcoming Events", path: "/user/events/upcoming" },
-    { label: "Waitlisted Events", path: "/user/events/waitlisted" }
+    { label: "Upcoming Events", path: "/user/events/upcoming" }
   ],
   engagement: [
     { label: "Chat Rooms", path: "/user/engagement/chat" },

@@ -7,8 +7,7 @@ const mainCategories = [
   { label: "Home"},
   { label: "Events"},
   { label: "Engagement"},
-  { label: "Community"},
-  { label: "Achievements"}
+  { label: "Community"}
 ];
 
 const TopbarUser = ({ onMainCategoryHover, onMainCategoryLeave }) => {

@@ -32,7 +32,7 @@ body.light-mode {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: 'Inter', sans-serif;
-  padding: 2rem;
+  padding: 10rem 2rem 2rem;
   gap: 2rem;
   box-sizing: border-box;
 }

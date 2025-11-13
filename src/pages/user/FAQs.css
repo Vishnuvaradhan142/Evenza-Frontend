@@ -1,5 +1,5 @@
 .faqs-page {
-  padding: 40px 20px;
+  padding: 10rem 20px 40px;
   background: var(--page-bg, linear-gradient(135deg, #fef6f9 0%, #f8f4ff 100%));
   min-height: 100vh;
   animation: fadeIn 0.5s ease-in-out;

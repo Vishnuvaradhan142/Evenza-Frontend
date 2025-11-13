@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   FiX,
   FiCheck,
@@ -9,6 +9,7 @@ import {
   FiClock,
   FiUser,
 } from "react-icons/fi";
+import API from "../../api";
 import "./AdminRequests.css";
 
 const ConfirmDialog = ({
@@ -19,8 +20,6 @@ const ConfirmDialog = ({
   onConfirm,
   onCancel,
   type,
-  reason,
-  setReason,
 }) => {
   if (!open) return null;
   return (
@@ -34,27 +33,11 @@ const ConfirmDialog = ({
         </div>
         <div className="confirm-body">
           <p>{message}</p>
-          {type === "reject" && (
-            <div className="reject-reason-block">
-              <label htmlFor="reject-reason">Reason (required)</label>
-              <textarea
-                id="reject-reason"
-                className="reject-reason-textarea"
-                placeholder="Provide a clear reason for rejection..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={4}
-              />
-            </div>
-          )}
         </div>
         <div className="confirm-footer">
-          <button className="btn-ghost" onClick={onCancel}>Cancel</button>
           <button
             className={type === "reject" ? "btn-reject" : "btn-approve"}
             onClick={onConfirm}
-            disabled={type === "reject" && !reason.trim()}
-            title={type === "reject" && !reason.trim() ? "Reason required" : ""}
           >
             {type === "reject" ? <FiXCircle /> : <FiCheck />} {confirmLabel}
           </button>
@@ -65,74 +48,84 @@ const ConfirmDialog = ({
 };
 
 const AdminRequests = () => {
-  const [requests, setRequests] = useState([
-    {
-      id: 1,
-      status: "pending",
-      submittedAt: "2025-10-06T09:15:00Z",
-      banner: "https://via.placeholder.com/640x280.png?text=Tech+Conference+2025",
-      title: "Tech Conference 2025",
-      capacity: 500,
-      date: "2025-10-15",
-      startTime: "10:00 AM",
-      endTime: "6:00 PM",
-      category: "Technology",
-      description: "Conference exploring the latest innovations in AI & ML.",
-      location: "Hyderabad Convention Center",
-      ticketTypes: [
-        { type: "General", cost: "₹500" },
-        { type: "VIP", cost: "₹1500" },
-      ],
-      agenda: [
-        { sessionTitle: "AI in Healthcare", start: "10:30 AM", end: "12:00 PM", description: "Applications of AI in healthcare." },
-        { sessionTitle: "ML Workshop", start: "1:30 PM", end: "3:00 PM", description: "Hands-on for beginners." },
-      ],
-      creator: { id: "USR123", name: "Alice Johnson", email: "alice@example.com" },
-    },
-    {
-      id: 2,
-      status: "pending",
-      submittedAt: "2025-10-07T11:45:00Z",
-      banner: "https://via.placeholder.com/640x280.png?text=Summer+Music+Fest",
-      title: "Summer Music Fest",
-      capacity: 300,
-      date: "2025-11-20",
-      startTime: "4:00 PM",
-      endTime: "11:00 PM",
-      category: "Entertainment",
-      description: "Music festival with live performances.",
-      location: "Goa Beach Arena",
-      ticketTypes: [
-        { type: "General", cost: "₹800" },
-        { type: "VIP", cost: "₹2500" },
-        { type: "VVIP", cost: "₹5000" },
-      ],
-      agenda: [
-        { sessionTitle: "Opening Act", start: "4:30 PM", end: "5:30 PM", description: "Local bands." },
-        { sessionTitle: "Main Performance", start: "7:00 PM", end: "10:00 PM", description: "Headline artists." },
-      ],
-      creator: { id: "USR456", name: "Bob Smith", email: "bob@example.com" },
-    },
-  ]);
-
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, reason: "" });
   const [toast, setToast] = useState(null);
+  const [reviewMessage, setReviewMessage] = useState("");
+
+  const parseLocations = (locations) => {
+    try {
+      if (typeof locations === 'string') {
+        return JSON.parse(locations);
+      }
+      return locations || [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const parseSessions = (sessions) => {
+    try {
+      if (typeof sessions === 'string') {
+        return JSON.parse(sessions);
+      }
+      return sessions || [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const parseDocuments = (documents) => {
+    try {
+      if (typeof documents === 'string') {
+        return JSON.parse(documents);
+      }
+      return documents || [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    fetchDrafts();
+  }, []);
+
+  const fetchDrafts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await API.get('/drafts?status=submitted');
+      console.log('Drafts response:', response.data);
+      setRequests(response.data || []);
+    } catch (err) {
+      console.error('Error loading drafts:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load requests');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats = useMemo(() => {
-    const s = { pending: 0, approved: 0, rejected: 0 };
-    requests.forEach(r => s[r.status]++);
+    const s = { submitted: 0 };
+    requests.forEach(r => {
+      if (r.status === 'submitted') s.submitted++;
+    });
     return s;
   }, [requests]);
 
   const openDetails = (req) => {
     setSelected(req);
     setDetailOpen(true);
+    setReviewMessage(""); // Reset review message
   };
   const closeDetails = () => {
     setDetailOpen(false);
     setSelected(null);
+    setReviewMessage(""); // Reset review message
   };
 
   const askAction = (type) => {
@@ -140,30 +133,54 @@ const AdminRequests = () => {
   };
   const closeConfirm = () => setConfirmDialog({ open: false, type: null, reason: "" });
 
-  const applyAction = () => {
+  const applyAction = async () => {
     if (!selected) return;
-    setRequests(prev =>
-      prev.map(r =>
-        r.id === selected.id
-          ? {
-              ...r,
-              status: confirmDialog.type === "approve" ? "approved" : "rejected",
-              rejectionReason: confirmDialog.type === "reject" ? confirmDialog.reason.trim() : r.rejectionReason,
-            }
-          : r
-      )
-    );
-    closeConfirm();
-    closeDetails();
-    setToast({
-      id: Date.now(),
-      message:
-        confirmDialog.type === "approve"
-          ? "Event approved successfully."
-          : "Event rejected.",
-      tone: confirmDialog.type === "approve" ? "success" : "danger",
-    });
-    setTimeout(() => setToast(null), 3000);
+    
+    try {
+      if (confirmDialog.type === "approve") {
+        const payload = {};
+        if (reviewMessage.trim()) {
+          payload.review_notes = reviewMessage.trim();
+        }
+        await API.put(`/drafts/${selected.draft_id}/approve`, payload);
+        setToast({
+          id: Date.now(),
+          message: "Event approved successfully.",
+          tone: "success",
+        });
+      } else {
+        if (!reviewMessage.trim()) {
+          setToast({
+            id: Date.now(),
+            message: "Review message is required for rejection.",
+            tone: "danger",
+          });
+          setTimeout(() => setToast(null), 3000);
+          return;
+        }
+        await API.put(`/drafts/${selected.draft_id}/reject`, {
+          review_notes: reviewMessage.trim()
+        });
+        setToast({
+          id: Date.now(),
+          message: "Event rejected.",
+          tone: "danger",
+        });
+      }
+      
+      closeConfirm();
+      closeDetails();
+      fetchDrafts(); // Refresh the list
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      console.error('Error processing request:', err);
+      setToast({
+        id: Date.now(),
+        message: err.response?.data?.message || 'Failed to process request',
+        tone: "danger",
+      });
+      setTimeout(() => setToast(null), 3000);
+    }
   };
 
   return (
@@ -184,18 +201,13 @@ const AdminRequests = () => {
 
       <div className="request-stats">
         <div className="stat-box">
-          <span className="label">Pending</span>
-          <span className="value">{stats.pending}</span>
-        </div>
-        <div className="stat-box approved">
-          <span className="label">Approved</span>
-          <span className="value">{stats.approved}</span>
-        </div>
-        <div className="stat-box rejected">
-          <span className="label">Rejected</span>
-          <span className="value">{stats.rejected}</span>
+          <span className="label">Pending Approvals</span>
+          <span className="value">{stats.submitted}</span>
         </div>
       </div>
+
+      {loading && <div className="loading-message">Loading requests...</div>}
+      {error && <div className="error-message">{error}</div>}
 
       <div className="table-wrap">
         <table className="requests-table">
@@ -204,45 +216,53 @@ const AdminRequests = () => {
               <th>Submitted</th>
               <th>Title</th>
               <th>Creator</th>
-              <th>Category</th>
-              <th>Status</th>
+              <th>Capacity</th>
             </tr>
           </thead>
           <tbody>
-            {requests.length === 0 && (
+            {!loading && requests.length === 0 && (
               <tr>
-                <td colSpan={5} className="no-rows">No requests</td>
+                <td colSpan={4} className="no-rows">No pending requests</td>
               </tr>
             )}
-            {requests.map(r => (
-              <tr key={r.id} className="row-clickable" onClick={() => openDetails(r)}>
-                <td>
-                  <div>{new Date(r.submittedAt).toLocaleDateString()}</div>
-                  <small className="muted">{new Date(r.submittedAt).toLocaleTimeString()}</small>
-                </td>
-                <td>
-                  <div className="title">{r.title}</div>
-                  <div className="meta">
-                    <FiMapPin size={12} /> {r.location}
-                  </div>
-                </td>
-                <td>
-                  <div>{r.creator.name}</div>
-                  <small className="muted">{r.creator.id}</small>
-                </td>
-                <td>
-                  <span className="badge">{r.category}</span>
-                </td>
-                <td>
-                  <span className={`status-badge ${r.status}`}>{r.status}</span>
-                </td>
-              </tr>
-            ))}
+            {requests.map(r => {
+              const locations = parseLocations(r.locations);
+              const locationStr = locations && locations[0] ? 
+                (locations[0].name || locations[0].address || 'No location') : 'No location';
+              
+              return (
+                <tr key={r.draft_id} className="row-clickable" onClick={() => openDetails(r)}>
+                  <td>
+                    <div>{new Date(r.submitted_at).toLocaleDateString()}</div>
+                    <small className="muted">{new Date(r.submitted_at).toLocaleTimeString()}</small>
+                  </td>
+                  <td>
+                    <div className="title">{r.title}</div>
+                    <div className="meta">
+                      <FiMapPin size={12} /> {locationStr}
+                    </div>
+                  </td>
+                  <td>
+                    <div>{r.submitted_by_name || `User ${r.submitted_by}`}</div>
+                    <small className="muted">ID: {r.submitted_by}</small>
+                  </td>
+                  <td>
+                    <div>{r.capacity || 'N/A'}</div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {detailOpen && selected && (
+      {detailOpen && selected && (() => {
+        const locations = parseLocations(selected.locations);
+        const sessions = parseSessions(selected.sessions);
+        const documents = parseDocuments(selected.documents);
+        const attachments = selected.attachments || [];
+        
+        return (
         <div className="modal-overlay" onClick={closeDetails}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -250,125 +270,191 @@ const AdminRequests = () => {
               <button className="close-btn" onClick={closeDetails}><FiX /></button>
             </div>
             <div className="modal-body">
-              <div className="banner">
-                <img src={selected.banner} alt={selected.title} />
-              </div>
+              {attachments.length > 0 && (
+                <div className="banner">
+                  <img src={attachments[0]} alt={selected.title} />
+                </div>
+              )}
 
               <section className="info-grid">
                 <div className="info-item">
                   <FiUser />
                   <div>
                     <label>Creator</label>
-                    <span>{selected.creator.name} ({selected.creator.id})</span>
+                    <span>{selected.submitted_by_name || `User ${selected.submitted_by}`} (ID: {selected.submitted_by})</span>
                   </div>
                 </div>
                 <div className="info-item">
                   <FiCalendar />
                   <div>
-                    <label>Date</label>
-                    <span>{selected.date}</span>
+                    <label>Start Date</label>
+                    <span>{new Date(selected.start_time).toLocaleDateString()} {new Date(selected.start_time).toLocaleTimeString()}</span>
                   </div>
                 </div>
                 <div className="info-item">
                   <FiClock />
                   <div>
-                    <label>Time</label>
-                    <span>{selected.startTime} - {selected.endTime}</span>
-                  </div>
-                </div>
-                <div className="info-item">
-                  <FiMapPin />
-                  <div>
-                    <label>Location</label>
-                    <span>{selected.location}</span>
+                    <label>End Date</label>
+                    <span>{new Date(selected.end_time).toLocaleDateString()} {new Date(selected.end_time).toLocaleTimeString()}</span>
                   </div>
                 </div>
                 <div className="info-item">
                   <FiUsers />
                   <div>
                     <label>Capacity</label>
-                    <span>{selected.capacity}</span>
+                    <span>{selected.capacity || 'N/A'}</span>
                   </div>
                 </div>
                 <div className="info-item">
                   <div>
-                    <label>Category</label>
-                    <span className="badge">{selected.category}</span>
+                    <label>Category ID</label>
+                    <span className="badge">{selected.category_id || 'N/A'}</span>
                   </div>
                 </div>
               </section>
 
               <section>
                 <h4>Description</h4>
-                <p className="description">{selected.description}</p>
+                <p className="description">{selected.description || 'No description provided'}</p>
               </section>
 
-              <section>
-                <h4>Ticket Types</h4>
-                <div className="tickets">
-                  {selected.ticketTypes.map((t, i) => (
-                    <div key={i} className="ticket-chip">
-                      <span>{t.type}</span>
-                      <strong>{t.cost}</strong>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h4>Agenda</h4>
-                <div className="agenda">
-                  {selected.agenda.map((s, i) => (
-                    <div key={i} className="agenda-row">
-                      <div className="time">{s.start} - {s.end}</div>
-                      <div className="details">
-                        <strong>{s.sessionTitle}</strong>
-                        <p>{s.description}</p>
+              {locations.length > 0 && (
+                <section>
+                  <h4>Locations</h4>
+                  <div className="tickets">
+                    {locations.map((loc, i) => (
+                      <div key={i} className="ticket-chip">
+                        <FiMapPin />
+                        <div>
+                          <strong>{loc.name || 'Unnamed Location'}</strong>
+                          {loc.address && <p>{loc.address}</p>}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {sessions.length > 0 && (
+                <section>
+                  <h4>Sessions</h4>
+                  <div className="agenda">
+                    {sessions.map((s, i) => {
+                      // Format time - handle both 24h format (17:00) and 12h format
+                      const formatTime = (timeStr) => {
+                        if (!timeStr) return 'N/A';
+                        
+                        // If it's already in HH:MM format (e.g., "17:00")
+                        if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+                          const [hours, minutes] = timeStr.split(':').map(Number);
+                          const period = hours >= 12 ? 'PM' : 'AM';
+                          const displayHours = hours % 12 || 12;
+                          return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+                        }
+                        
+                        // If it's a full datetime string
+                        if (timeStr.includes('T') || timeStr.includes(' ')) {
+                          try {
+                            const date = new Date(timeStr);
+                            return date.toLocaleTimeString('en-US', { 
+                              hour: '2-digit', 
+                              minute: '2-digit',
+                              hour12: true 
+                            });
+                          } catch (e) {
+                            return timeStr;
+                          }
+                        }
+                        
+                        return timeStr;
+                      };
+                      
+                      return (
+                        <div key={i} className="agenda-row">
+                          <div className="time">
+                            {formatTime(s.start)} - {formatTime(s.end)}
+                          </div>
+                          <div className="details">
+                            <strong>{s.title || 'Session ' + (i + 1)}</strong>
+                            {s.desc && <p>{s.desc}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {documents.length > 0 && (
+                <section>
+                  <h4>Documents</h4>
+                  <div className="tickets">
+                    {documents.map((doc, i) => (
+                      <div key={i} className="ticket-chip">
+                        <span>{doc.name || `Document ${i + 1}`}</span>
+                        <a href={doc.path} target="_blank" rel="noopener noreferrer">View</a>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               <section className="submission">
-                <h4>Submission</h4>
+                <h4>Submission Details</h4>
                 <div className="sub-grid">
                   <div>
-                    <label>Submitted</label>
+                    <label>Submitted At</label>
                     <span>
-                      {new Date(selected.submittedAt).toLocaleDateString()}{" "}
-                      {new Date(selected.submittedAt).toLocaleTimeString()}
+                      {new Date(selected.submitted_at).toLocaleDateString()}{" "}
+                      {new Date(selected.submitted_at).toLocaleTimeString()}
                     </span>
-                  </div>
-                  <div>
-                    <label>Email</label>
-                    <span>{selected.creator.email}</span>
                   </div>
                   <div>
                     <label>Status</label>
                     <span className={`status-badge ${selected.status}`}>{selected.status}</span>
                   </div>
-                  {selected.status === "rejected" && selected.rejectionReason && (
+                  {selected.status === "rejected" && selected.review_notes && (
                     <div className="rejection-reason-view">
-                      <label>Reason</label>
-                      <span>{selected.rejectionReason}</span>
+                      <label>Rejection Reason</label>
+                      <span>{selected.review_notes}</span>
                     </div>
                   )}
                 </div>
               </section>
+
+              <section className="review-section">
+                <h4>Review Message</h4>
+                <textarea
+                  className="review-message-textarea"
+                  placeholder="Add a review message or notes (optional for approval, required for rejection)..."
+                  value={reviewMessage}
+                  onChange={(e) => setReviewMessage(e.target.value)}
+                  rows={4}
+                />
+                <small className="muted">This message will be visible to the event creator.</small>
+              </section>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost" onClick={closeDetails}>Close</button>
-              {selected.status === "pending" && (
+              {selected.status === "submitted" && (
                 <div className="action-buttons">
-                  <button className="btn-reject" onClick={() => askAction("reject")}><FiXCircle /> Reject</button>
-                  <button className="btn-approve" onClick={() => askAction("approve")}><FiCheck /> Approve</button>
+                  <button 
+                    className="btn-reject" 
+                    onClick={() => askAction("reject")}
+                    disabled={!reviewMessage.trim()}
+                    title={!reviewMessage.trim() ? "Review message required for rejection" : ""}
+                  >
+                    <FiXCircle /> Reject
+                  </button>
+                  <button className="btn-approve" onClick={() => askAction("approve")}>
+                    <FiCheck /> Approve
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       <ConfirmDialog
         open={confirmDialog.open}
@@ -376,8 +462,10 @@ const AdminRequests = () => {
         title={confirmDialog.type === "reject" ? "Reject Event" : "Approve Event"}
         message={
           confirmDialog.type === "reject"
-            ? "Provide a reason and confirm rejection."
-            : "Approve this event and mark it as active?"
+            ? `Are you sure you want to reject this event? Review message: "${reviewMessage}"`
+            : reviewMessage.trim() 
+              ? `Approve this event with the message: "${reviewMessage}"`
+              : "Approve this event and mark it as active?"
         }
         confirmLabel={confirmDialog.type === "reject" ? "Reject" : "Approve"}
         reason={confirmDialog.reason}

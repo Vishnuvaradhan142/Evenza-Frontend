@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiCheckCircle,
@@ -7,47 +7,91 @@ import {
   FiChevronRight,
   FiX,
 } from "react-icons/fi";
+import API from "../../api";
 import "./OwnerDashboard.css";
-
-const currency = (n) =>
-  new Intl.NumberFormat(undefined, { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
-
-const sampleEvents = [
-  { id: 1, title: "Tech Conference 2025", date: "2025-10-15", status: "Pending", ticketsSold: 280, revenue: 210000, views: 920 },
-  { id: 2, title: "Summer Music Fest", date: "2025-11-20", status: "Published", ticketsSold: 310, revenue: 372000, views: 1340 },
-  { id: 3, title: "Startup Meetup", date: "2025-10-22", status: "Draft", ticketsSold: 0, revenue: 0, views: 110 },
-  { id: 4, title: "Design Workshop", date: "2025-10-19", status: "Published", ticketsSold: 95, revenue: 57000, views: 420 },
-  { id: 5, title: "AI Bootcamp", date: "2025-10-25", status: "Pending", ticketsSold: 140, revenue: 98000, views: 680 },
-];
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
-  const [events, setEvents] = useState(sampleEvents);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [pendingDrafts, setPendingDrafts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [confirmReject, setConfirmReject] = useState(null);
 
-  const recent = useMemo(() => {
-    return [...events].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
-  }, [events]);
-
-  const pendingList = useMemo(() => events.filter((e) => e.status === "Pending").slice(0, 6), [events]);
-
-  const flash = (msg, tone = "info") => {
+  const flash = useCallback((msg, tone = "info") => {
     setToast({ id: Date.now(), msg, tone });
     setTimeout(() => setToast(null), 2800);
-  };
+  }, []);
 
-  const approve = (id) => {
-    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, status: "Published" } : e)));
-    flash("Event approved", "success");
+  const fetchUpcomingEvents = useCallback(async () => {
+    try {
+      setEventsLoading(true);
+      const response = await API.get('/events');
+      const allEvents = response.data || [];
+      
+      // Filter upcoming events and sort by start_time
+      const now = new Date();
+      const upcoming = allEvents
+        .filter(event => new Date(event.start_time) > now)
+        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
+        .slice(0, 5);
+      
+      setUpcomingEvents(upcoming);
+    } catch (err) {
+      console.error("Error fetching upcoming events:", err);
+      flash("Failed to load upcoming events", "danger");
+    } finally {
+      setEventsLoading(false);
+    }
+  }, [flash]);
+
+  const fetchPendingDrafts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await API.get('/drafts?status=submitted');
+      setPendingDrafts(response.data || []);
+    } catch (err) {
+      console.error("Error fetching pending drafts:", err);
+      flash("Failed to load pending approvals", "danger");
+    } finally {
+      setLoading(false);
+    }
+  }, [flash]);
+
+  useEffect(() => {
+    fetchUpcomingEvents();
+    fetchPendingDrafts();
+  }, [fetchUpcomingEvents, fetchPendingDrafts]);
+
+  const pendingList = useMemo(() => pendingDrafts.slice(0, 6), [pendingDrafts]);
+
+  const approve = async (id) => {
+    try {
+      await API.put(`/drafts/${id}/approve`);
+      flash("Event approved successfully", "success");
+      fetchPendingDrafts(); // Refresh the list
+    } catch (err) {
+      console.error("Error approving event:", err);
+      flash(err.response?.data?.message || "Failed to approve event", "danger");
+    }
   };
 
   const askReject = (e) => setConfirmReject(e);
-  const doReject = () => {
+  const doReject = async () => {
     if (!confirmReject) return;
-    setEvents((prev) => prev.map((e) => (e.id === confirmReject.id ? { ...e, status: "Rejected" } : e)));
-    setConfirmReject(null);
-    flash("Event rejected", "danger");
+    try {
+      await API.put(`/drafts/${confirmReject.draft_id}/reject`, {
+        review_notes: "Rejected from dashboard"
+      });
+      setConfirmReject(null);
+      flash("Event rejected successfully", "danger");
+      fetchPendingDrafts(); // Refresh the list
+    } catch (err) {
+      console.error("Error rejecting event:", err);
+      flash(err.response?.data?.message || "Failed to reject event", "danger");
+      setConfirmReject(null);
+    }
   };
 
   return (
@@ -71,8 +115,8 @@ const OwnerDashboard = () => {
       <div className="grid-2">
         <div className="card">
           <div className="card-head">
-            <h3>Recent Events</h3>
-            <span className="count-badge">{recent.length}</span>
+            <h3>Upcoming Events</h3>
+            <span className="count-badge">{upcomingEvents.length}</span>
           </div>
           <div className="table-wrapper">
             <table className="events-table">
@@ -80,34 +124,33 @@ const OwnerDashboard = () => {
                 <tr>
                   <th>Event</th>
                   <th>Date</th>
-                  <th>Status</th>
-                  <th>Tickets</th>
-                  <th>Revenue</th>
-                  <th>Views</th>
+                  <th>Creator</th>
                 </tr>
               </thead>
               <tbody>
-                {recent.map((e) => (
-                  <tr key={e.id}>
-                    <td className="name-cell">
-                      <div className="name">{e.title}</div>
-                      <small className="muted">ID #{e.id}</small>
-                    </td>
-                    <td>{e.date}</td>
-                    <td>
-                      <span className={`status-badge ${e.status.toLowerCase()}`}>{e.status}</span>
-                    </td>
-                    <td>{e.ticketsSold}</td>
-                    <td>{currency(e.revenue)}</td>
-                    <td>{e.views}</td>
-                  </tr>
-                ))}
-                {recent.length === 0 && (
+                {eventsLoading ? (
                   <tr>
-                    <td colSpan={6} className="empty">
-                      No events yet.
+                    <td colSpan={3} className="empty">
+                      Loading events...
                     </td>
                   </tr>
+                ) : upcomingEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="empty">
+                      No upcoming events.
+                    </td>
+                  </tr>
+                ) : (
+                  upcomingEvents.map((e) => (
+                    <tr key={e.event_id}>
+                      <td className="name-cell">
+                        <div className="name">{e.title}</div>
+                        <small className="muted">ID #{e.event_id}</small>
+                      </td>
+                      <td>{new Date(e.start_time).toLocaleDateString()}</td>
+                      <td>{e.creator_name || `User ${e.created_by}`}</td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -120,25 +163,30 @@ const OwnerDashboard = () => {
             <span className="count-badge">{pendingList.length}</span>
           </div>
           <ul className="approvals-list">
-            {pendingList.map((e) => (
-              <li key={e.id}>
-                <div className="appr-main">
-                  <div className="title">{e.title}</div>
-                  <div className="meta">
-                    <FiClock /> {e.date}
+            {loading ? (
+              <li className="empty">Loading pending approvals...</li>
+            ) : pendingList.length === 0 ? (
+              <li className="empty">No pending requests.</li>
+            ) : (
+              pendingList.map((e) => (
+                <li key={e.draft_id}>
+                  <div className="appr-main">
+                    <div className="title">{e.title}</div>
+                    <div className="meta">
+                      <FiClock /> {new Date(e.submitted_at).toLocaleDateString()}
+                    </div>
                   </div>
-                </div>
-                <div className="appr-actions">
-                  <button className="btn-approve" onClick={() => approve(e.id)}>
-                    <FiCheckCircle /> Approve
-                  </button>
-                  <button className="btn-reject" onClick={() => askReject(e)}>
-                    <FiXCircle /> Reject
-                  </button>
-                </div>
-              </li>
-            ))}
-            {pendingList.length === 0 && <li className="empty">No pending requests.</li>}
+                  <div className="appr-actions">
+                    <button className="btn-approve" onClick={() => approve(e.draft_id)}>
+                      <FiCheckCircle /> Approve
+                    </button>
+                    <button className="btn-reject" onClick={() => askReject(e)}>
+                      <FiXCircle /> Reject
+                    </button>
+                  </div>
+                </li>
+              ))
+            )}
           </ul>
           <button className="link-row" onClick={() => navigate("/owner/controls/requests")}>
             View all approvals <FiChevronRight />
@@ -156,7 +204,7 @@ const OwnerDashboard = () => {
               </button>
             </div>
             <div className="mini-body">
-              <p>Reject <strong>{confirmReject.title}</strong> scheduled on {confirmReject.date}?</p>
+              <p>Reject <strong>{confirmReject.title}</strong> submitted on {new Date(confirmReject.submitted_at).toLocaleDateString()}?</p>
             </div>
             <div className="mini-foot">
               <button className="btn-light" onClick={() => setConfirmReject(null)}>Cancel</button>
