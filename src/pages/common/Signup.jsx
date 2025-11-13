@@ -4,6 +4,8 @@ import "./Auth.css";
 import axios from "axios";
 import BulbToggle from '../../components/ThemeToggle/BulbToggle';
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+
 function Signup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -173,7 +175,7 @@ function Signup() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/auth/signup", {
+      await axios.post(`${API_BASE}/auth/signup`, {
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -228,7 +230,7 @@ function Signup() {
       } else if (err.response?.status === 500) {
         setErrors({ general: "Server error. Please check if the backend is running." });
       } else if (err.code === 'ERR_NETWORK') {
-        setErrors({ general: "Network error. Please check if the backend server is running at http://localhost:5000" });
+        setErrors({ general: "Network error. Unable to connect to the server." });
       } else if (err.response?.status === 404) {
         setErrors({ general: "Signup endpoint not found. Please check the backend configuration." });
       } else {
