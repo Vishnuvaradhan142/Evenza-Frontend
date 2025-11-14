@@ -57,19 +57,38 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        // ✅ Fetch all events
+        // ✅ Fetch all events and normalize fields to a consistent shape
         const allEventsRes = await axios.get(`${API_BASE}/events`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("All Events:", allEventsRes.data);
-        setAllEvents(allEventsRes.data || []);
+        const normalizeEvent = (e) => ({
+          event_id: e.event_id ?? e.id,
+          title: e.title || e.event_name || e.name || e.eventTitle || "Untitled Event",
+          start_time: e.start_time || e.event_date || e.start || e.date || null,
+          end_time: e.end_time || e.event_end || e.end || null,
+          location: e.location || e.locations || e.venue || e.place || "",
+          category: e.category || e.type || "",
+          image: e.image_path || e.image || e.imageUrl || e.image_url || null,
+          raw: e,
+        });
+        setAllEvents(Array.isArray(allEventsRes.data) ? allEventsRes.data.map(normalizeEvent) : []);
 
-        // ✅ Fetch upcoming events
+        // ✅ Fetch upcoming events and normalize
         const upcomingEventsRes = await axios.get(`${API_BASE}/events/user/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Upcoming Events:", upcomingEventsRes.data);
-        setUpcomingEvents(upcomingEventsRes.data || []);
+        setUpcomingEvents(Array.isArray(upcomingEventsRes.data) ? upcomingEventsRes.data.map((e) => ({
+          event_id: e.event_id ?? e.id,
+          title: e.title || e.event_name || e.name || "Untitled Event",
+          start_time: e.start_time || e.event_date || e.start || null,
+          end_time: e.end_time || e.event_end || e.end || null,
+          location: e.location || e.locations || e.venue || "",
+          category: e.category || e.type || "",
+          image: e.image_path || e.image || null,
+          raw: e,
+        })) : []);
 
         // ✅ Fetch saved events
         try {
@@ -394,7 +413,7 @@ const Dashboard = () => {
                     <span className="meta-category">{event.category}</span>
                   </div>
                   <h3>{event.title}</h3>
-                  <p className="event-location">{event.location}</p>
+                  <p className="event-location">{formatLocation(event.location)}</p>
                 </div>
               </div>
             ))}
