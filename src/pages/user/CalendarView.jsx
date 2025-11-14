@@ -7,9 +7,6 @@ import { FiCalendar, FiClock, FiMapPin } from "react-icons/fi";
 import axios from "axios";
 import API from "../../api";
 
-// Use API client which already uses REACT_APP_API_URL and includes `/api` by default.
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api"; // module-scope stable value
-
 // 👉 Local-date helper (NO UTC conversion)
 function toLocalDayISO(input) {
   if (!input) return null;
