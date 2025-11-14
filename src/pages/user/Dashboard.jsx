@@ -224,6 +224,16 @@ const Dashboard = () => {
     return String(loc);
   };
 
+  // Map numeric category ids to friendly names (falls back to raw value)
+  const displayCategory = (cat) => {
+    if (!cat && cat !== 0) return "";
+    // already a friendly string
+    if (typeof cat === "string" && isNaN(Number(cat))) return cat;
+    const id = Number(cat);
+    if (!isNaN(id) && id > 0 && id <= categoriesList.length) return categoriesList[id - 1];
+    return String(cat);
+  };
+
   const handleEventClick = (eventId) => {
     navigate(`/user/events/browse`);
   };
@@ -333,7 +343,7 @@ const Dashboard = () => {
                       <FiCalendar size={14} />
                       {formatDateTime(event.start_time)}
                     </span>
-                    <span className="meta-category">{event.category}</span>
+                    <span className="meta-category">{displayCategory(event.category)}</span>
                   </div>
                   <h3>{event.title}</h3>
                   <p className="event-location">{formatLocation(event.location)}</p>
@@ -410,7 +420,7 @@ const Dashboard = () => {
                       <FiCalendar size={14} />
                       {formatDateTime(event.start_time)}
                     </span>
-                    <span className="meta-category">{event.category}</span>
+                    <span className="meta-category">{displayCategory(event.category)}</span>
                   </div>
                   <h3>{event.title}</h3>
                   <p className="event-location">{formatLocation(event.location)}</p>
