@@ -1,8 +1,12 @@
 // api.js
 import axios from "axios";
 
+// Ensure baseURL ends with '/api' so callers using paths like '/events' hit '/api/events'
+const rawBase = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const baseURL = rawBase.endsWith("/api") ? rawBase : (rawBase.endsWith("/") ? rawBase + "api" : rawBase + "/api");
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
+  baseURL,
 });
 
 // Attach JWT token automatically if present
