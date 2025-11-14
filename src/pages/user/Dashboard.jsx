@@ -88,17 +88,47 @@ const Dashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Joined Count:", joinedCountRes.data);
-        // DB drivers may return different casing for the alias (joinedCount, joinedcount, joined_count)
-        const joinedVal = joinedCountRes.data?.joinedCount ?? joinedCountRes.data?.joinedcount ?? joinedCountRes.data?.joined_count ?? 0;
-        setJoinedCount(Number(joinedVal) || 0);
+        // Robust extractor: handle different key casings, nested shapes, or numeric strings
+        const extractNumberFromResponse = (obj) => {
+          if (obj == null) return null;
+          if (typeof obj === "number") return obj;
+          if (typeof obj === "string") {
+            const n = Number(obj);
+            return isNaN(n) ? null : n;
+          }
+          if (typeof obj === "object") {
+            const keys = ["joinedCount", "joinedcount", "joined_count", "count", "joined"];
+            for (const k of keys) {
+              if (obj[k] !== undefined && obj[k] !== null && !isNaN(Number(obj[k]))) return Number(obj[k]);
+            }
+            // Check direct values
+            for (const v of Object.values(obj)) {
+              if (!isNaN(Number(v))) return Number(v);
+            }
+            // Handle nested arrays like rows: [{ joinedCount: '6' }]
+            for (const v of Object.values(obj)) {
+              if (Array.isArray(v) && v.length && typeof v[0] === 'object') {
+                for (const nested of v) {
+                  for (const nv of Object.values(nested)) {
+                    if (!isNaN(Number(nv))) return Number(nv);
+                  }
+                }
+              }
+            }
+          }
+          return null;
+        };
+
+        const joinedVal = extractNumberFromResponse(joinedCountRes.data);
+        setJoinedCount(joinedVal !== null ? joinedVal : 0);
 
         // ✅ Upcoming count
         const upcomingCountRes = await axios.get(`${API_BASE}/events/stats/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Upcoming Count:", upcomingCountRes.data);
-        const upVal = upcomingCountRes.data?.upcomingCount ?? upcomingCountRes.data?.upcomingcount ?? upcomingCountRes.data?.upcoming_count ?? null;
-        setUpcomingCount(upVal !== null ? Number(upVal) || 0 : (upcomingEventsRes.data ? upcomingEventsRes.data.length : 0));
+        const upVal = extractNumberFromResponse(upcomingCountRes.data) ?? null;
+        setUpcomingCount(upVal !== null ? upVal : (upcomingEventsRes.data ? upcomingEventsRes.data.length : 0));
 
         // ✅ Notifications count
         const notifRes = await axios.get(`${API_BASE}/notifications/user`, {
