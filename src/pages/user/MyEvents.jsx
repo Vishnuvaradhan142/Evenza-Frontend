@@ -20,6 +20,32 @@ const MyEvents = () => {
     return `https://source.unsplash.com/600x400/?${keyword}`;
   }, []);
 
+  // Format location: if location is stored as a JSON string (e.g. '[{"name":"Main Auditorium"}]'), parse it
+  const formatLocation = useCallback((loc) => {
+    if (!loc) return "TBD";
+    if (typeof loc === "string") {
+      const trimmed = loc.trim();
+      // try parse JSON arrays/objects
+      if ((trimmed.startsWith("{") || trimmed.startsWith("["))) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // prefer 'name' or 'label'
+            const first = parsed[0];
+            if (first && (first.name || first.label)) return first.name || first.label;
+            return String(parsed[0]);
+          }
+          if (parsed && (parsed.name || parsed.label)) return parsed.name || parsed.label;
+        } catch (e) {
+          // not JSON, fall through
+        }
+      }
+      if (trimmed.length === 0) return "TBD";
+      return trimmed;
+    }
+    return String(loc);
+  }, []);
+
   // Get event status based on start and end times
   const getEventStatus = useCallback((event) => {
     const now = new Date();
@@ -117,18 +143,16 @@ const MyEvents = () => {
                 </div>
                 <h3>{event.title}</h3>
                 <p className="event-date">
-                  {new Date(event.start_time).toLocaleDateString()} •{" "}
-                  {new Date(event.start_time).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
-                  -{" "}
-                  {new Date(event.end_time).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {event.start_time ? new Date(event.start_time).toLocaleDateString() : "TBD"} • {" "}
+                  {event.start_time ? new Date(event.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}
+                  {event.end_time ? (
+                    <>
+                      {" "}- {" "}
+                      {new Date(event.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </>
+                  ) : null}
                 </p>
-                <p className="event-location">{event.location}</p>
+                <p className="event-location">{formatLocation(event.location)}</p>
               </div>
             </div>
           ))

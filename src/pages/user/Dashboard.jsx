@@ -181,6 +181,30 @@ const Dashboard = () => {
 
   const recentUpcomingEvents = upcomingEvents.slice(0, 3);
 
+  // Format location same as other pages: handle JSON-string locations
+  const formatLocation = (loc) => {
+    if (!loc) return "TBD";
+    if (typeof loc === "string") {
+      const trimmed = loc.trim();
+      if ((trimmed.startsWith("{") || trimmed.startsWith("["))) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const first = parsed[0];
+            if (first && (first.name || first.label)) return first.name || first.label;
+            return String(parsed[0]);
+          }
+          if (parsed && (parsed.name || parsed.label)) return parsed.name || parsed.label;
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (trimmed.length === 0) return "TBD";
+      return trimmed;
+    }
+    return String(loc);
+  };
+
   const handleEventClick = (eventId) => {
     navigate(`/user/events/browse`);
   };
@@ -293,7 +317,7 @@ const Dashboard = () => {
                     <span className="meta-category">{event.category}</span>
                   </div>
                   <h3>{event.title}</h3>
-                  <p className="event-location">{event.location}</p>
+                  <p className="event-location">{formatLocation(event.location)}</p>
                 </div>
               </div>
             ))}
