@@ -50,10 +50,18 @@ const MyEvents = () => {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem("token"); // assuming token stored on login
-        const res = await axios.get(`${API_BASE}/user/joined`, {
+        // Correct endpoint: events routes are mounted under /events
+        const res = await axios.get(`${API_BASE}/events/user/joined`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setMyEvents(res.data);
+        // Normalize common field variations so UI can rely on start_time/title
+        const normalized = (Array.isArray(res.data) ? res.data : []).map((ev) => {
+          const start = ev.start_time ?? ev.event_date ?? ev.eventDate ?? ev.date ?? ev.startDate ?? ev.created_at ?? null;
+          const end = ev.end_time ?? ev.ends_at ?? ev.end ?? ev.event_end ?? null;
+          const title = ev.title ?? ev.event_name ?? ev.name ?? "Untitled Event";
+          return { ...ev, start_time: start, end_time: end, title };
+        });
+        setMyEvents(normalized);
       } catch (err) {
         console.error("Error fetching joined events:", err);
       } finally {
