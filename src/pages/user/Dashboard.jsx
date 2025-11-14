@@ -88,14 +88,17 @@ const Dashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Joined Count:", joinedCountRes.data);
-        setJoinedCount(joinedCountRes.data?.joinedCount ?? 0);
+        // DB drivers may return different casing for the alias (joinedCount, joinedcount, joined_count)
+        const joinedVal = joinedCountRes.data?.joinedCount ?? joinedCountRes.data?.joinedcount ?? joinedCountRes.data?.joined_count ?? 0;
+        setJoinedCount(Number(joinedVal) || 0);
 
         // ✅ Upcoming count
         const upcomingCountRes = await axios.get(`${API_BASE}/events/stats/upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Upcoming Count:", upcomingCountRes.data);
-        setUpcomingCount(upcomingCountRes.data?.upcomingCount ?? (upcomingEventsRes.data ? upcomingEventsRes.data.length : 0));
+        const upVal = upcomingCountRes.data?.upcomingCount ?? upcomingCountRes.data?.upcomingcount ?? upcomingCountRes.data?.upcoming_count ?? null;
+        setUpcomingCount(upVal !== null ? Number(upVal) || 0 : (upcomingEventsRes.data ? upcomingEventsRes.data.length : 0));
 
         // ✅ Notifications count
         const notifRes = await axios.get(`${API_BASE}/notifications/user`, {
