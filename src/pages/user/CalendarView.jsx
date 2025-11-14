@@ -57,8 +57,11 @@ function CalendarView() {
 
         // Normalize events: local-day string at _dayISO
         const normalized = (Array.isArray(res.data) ? res.data : []).map((ev) => {
-          const dt = ev.start_time ?? ev.date ?? ev.startDate ?? ev.created_at;
-          return { ...ev, _dayISO: toLocalDayISO(dt) };
+          // Backend may use different field names: `event_date` / `event_name` in joined responses.
+          const dt = ev.start_time ?? ev.event_date ?? ev.eventDate ?? ev.date ?? ev.startDate ?? ev.created_at;
+          const startTime = ev.start_time ?? ev.event_date ?? ev.eventDate ?? ev.date ?? ev.startDate ?? ev.created_at;
+          const title = ev.title ?? ev.event_name ?? ev.name;
+          return { ...ev, _dayISO: toLocalDayISO(dt), start_time: startTime, title };
         });
 
         setEvents(normalized);
