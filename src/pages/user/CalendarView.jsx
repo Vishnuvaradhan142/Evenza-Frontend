@@ -5,8 +5,10 @@ import "react-calendar/dist/Calendar.css";
 import "./CalendarView.css";
 import { FiCalendar, FiClock, FiMapPin } from "react-icons/fi";
 import axios from "axios";
+import API from "../../api";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000"; // module-scope stable value
+// Use API client which already uses REACT_APP_API_URL and includes `/api` by default.
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api"; // module-scope stable value
 
 // 👉 Local-date helper (NO UTC conversion)
 function toLocalDayISO(input) {
@@ -48,8 +50,8 @@ function CalendarView() {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${API_BASE}/events/user/joined`, {
-          headers: { Authorization: `Bearer ${token}` },
+        // Use shared API client so baseURL and auth handling are consistent
+        const res = await API.get(`/events/user/joined`, {
           signal: controller.signal,
         });
 
