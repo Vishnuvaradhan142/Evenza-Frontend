@@ -11,10 +11,12 @@ const menuMap = {
     { label: "Browse Events", path: "/user/events/browse" },
     { label: "My Events", path: "/user/events/my-events" },
     { label: "Saved Events", path: "/user/events/saved" },
-    { label: "Upcoming Events", path: "/user/events/upcoming" }
+    { label: "Upcoming Events", path: "/user/events/upcoming" },
+    { label: "Waitlisted", path: "/user/events/waitlisted" }
   ],
   community: [
     { label: "Chat Rooms", path: "/user/community/chat" },
+    { label: "Reviews", path: "/user/community/reviewing" },
     { label: "Notifications", path: "/user/community/notifications" },
     { label: "FAQs", path: "/user/community/faqs" }
   ],

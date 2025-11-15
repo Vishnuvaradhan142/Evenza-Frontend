@@ -15,6 +15,16 @@ const categoriesList = [
   "Workshops",
 ];
 
+// Explicit mapping from category_id (database IDs) to friendly labels.
+// This ensures the numeric IDs returned by Postgres map to the correct names.
+const categoryIdToLabel = {
+  1: "Technology",
+  2: "Cultural Programs",
+  3: "Sports",
+  4: "Workshops",
+  5: "Music & Concerts",
+  6: "Networking",
+};
 // ✅ Date formatter helper
 const formatDateTime = (dateString) => {
   if (!dateString) return "";
@@ -46,6 +56,52 @@ const Dashboard = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("user_id");
 
+  // Normalize backend category shapes and map numeric ids to friendly labels
+  const determineCategory = (e) => {
+    if (!e) return "";
+    // Prefer explicit numeric id when present (some backends set `category` to a default string)
+    if (e.category_id !== undefined && e.category_id !== null && e.category_id !== "") {
+      const n = Number(e.category_id);
+      if (!isNaN(n) && n > 0) {
+        // Prefer explicit mapping first (db id -> label)
+        if (categoryIdToLabel[n]) return categoryIdToLabel[n];
+        // fallback to positional list if mapping missing
+        if (n <= categoriesList.length) return categoriesList[n - 1];
+      }
+      // fall through to use as string if not in range
+      return String(e.category_id);
+    }
+    const candidates = [e.category, e.category_name, e.categoryId, e.type, e.cat];
+    let cat = candidates.find((c) => c !== undefined && c !== null && c !== "");
+    if (cat === undefined || cat === null) return "";
+    // if object, prefer name/label
+    if (typeof cat === 'object') {
+      if (cat.name) return String(cat.name);
+      if (cat.label) return String(cat.label);
+      if (typeof cat.id === 'number') cat = cat.id;
+      else return JSON.stringify(cat);
+    }
+    // if numeric or numeric-string, map to categoriesList
+    const n = Number(cat);
+    if (!isNaN(n) && n > 0 && n <= categoriesList.length) return categoriesList[n - 1];
+    // common alias mapping
+    const s = String(cat).trim();
+    const alias = {
+      'general': 'General',
+      'music': 'Music & Concerts',
+      'music & concerts': 'Music & Concerts',
+      'cultural': 'Cultural Programs',
+      'cultural programs': 'Cultural Programs',
+      'networking': 'Networking',
+      'sports': 'Sports',
+      'technology': 'Technology',
+      'workshop': 'Workshops',
+      'workshops': 'Workshops'
+    };
+    if (alias[s.toLowerCase()]) return alias[s.toLowerCase()];
+    return s;
+  };
+
   useEffect(() => {
     if (!token || !userId) {
       console.error("Token or User ID missing");
@@ -68,11 +124,16 @@ const Dashboard = () => {
           start_time: e.start_time || e.event_date || e.start || e.date || null,
           end_time: e.end_time || e.event_end || e.end || null,
           location: e.location || e.locations || e.venue || e.place || "",
-          category: e.category || e.type || "",
+          category: determineCategory(e),
           image: e.image_path || e.image || e.imageUrl || e.image_url || null,
           raw: e,
         });
-        setAllEvents(Array.isArray(allEventsRes.data) ? allEventsRes.data.map(normalizeEvent) : []);
+        const normalized = Array.isArray(allEventsRes.data) ? allEventsRes.data.map(normalizeEvent) : [];
+        // debug: log raw category fields if everything maps to General
+        if (normalized.length && new Set(normalized.map(x => x.category)).size === 1 && normalized[0].category === 'General') {
+          console.debug('Dashboard: all events mapped to General, sample raw categories:', allEventsRes.data.slice(0,5).map(r => ({category: r.category, category_id: r.category_id, category_name: r.category_name}))); 
+        }
+        setAllEvents(normalized);
 
         // ✅ Fetch upcoming events and normalize
         const upcomingEventsRes = await axios.get(`${API_BASE}/events/user/upcoming`, {
@@ -85,7 +146,7 @@ const Dashboard = () => {
           start_time: e.start_time || e.event_date || e.start || null,
           end_time: e.end_time || e.event_end || e.end || null,
           location: e.location || e.locations || e.venue || "",
-          category: e.category || e.type || "",
+          category: determineCategory(e),
           image: e.image_path || e.image || null,
           raw: e,
         })) : []);
@@ -230,7 +291,10 @@ const Dashboard = () => {
     // already a friendly string
     if (typeof cat === "string" && isNaN(Number(cat))) return cat;
     const id = Number(cat);
-    if (!isNaN(id) && id > 0 && id <= categoriesList.length) return categoriesList[id - 1];
+    if (!isNaN(id) && id > 0) {
+      if (categoryIdToLabel[id]) return categoryIdToLabel[id];
+      if (id <= categoriesList.length) return categoriesList[id - 1];
+    }
     return String(cat);
   };
 

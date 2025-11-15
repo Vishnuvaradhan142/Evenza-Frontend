@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../../api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./WaitlistedEvents.css";
@@ -14,13 +14,6 @@ const CalendarIcon = () => (
   </svg>
 );
 
-const LocationIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-    <circle cx="12" cy="10" r="3"></circle>
-  </svg>
-);
-
 const WarningIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -32,37 +25,47 @@ const WarningIcon = () => (
 const formatDate = (dateString) => {
   if (!dateString) return "";
   const options = { year: "numeric", month: "short", day: "numeric" };
-  return new Date(dateString).toLocaleDateString("en-US", options);
+  try {
+    return new Date(dateString).toLocaleDateString("en-US", options);
+  } catch (e) {
+    return "";
+  }
 };
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const formatTime = (dateString) => {
+  if (!dateString) return "";
+  try {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return "";
+  }
+};
+
+const pickStart = (ev) => {
+  return ev.start_time || ev.start || ev.starts_at || ev.startDate || ev.startDateTime || ev.start_dt || ev.start_at || null;
+};
+
+const pickTitle = (ev) => {
+  return ev.eventName || ev.title || ev.event_title || ev.name || ev.event || `Event ${ev.event_id || ev.registration_id || ''}`;
+};
+
+const pickCategory = (ev) => {
+  return ev.category || ev.category_name || ev.cat || 'General';
+};
 
 const WaitlistedEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Store notified state
-  const [notified, setNotified] = useState({});
 
   // Fetch waitlisted events
   useEffect(() => {
     const fetchWaitlisted = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_BASE}/my-waitlist`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await API.get(`/registrations/my-waitlist`);
 
-        setEvents(res.data);
-
-        // Set notified state for events already notified
-        const notifiedMap = {};
-        res.data.forEach((event) => {
-          if (event.already_notified) {
-            notifiedMap[event.registration_id] = true;
-          }
-        });
-        setNotified(notifiedMap);
+        const data = res.data || [];
+        setEvents(data);
       } catch (err) {
         console.error("Error fetching waitlisted events:", err);
         toast.error("Failed to load waitlisted events");
@@ -77,38 +80,12 @@ const WaitlistedEvents = () => {
   // Remove waitlist
   const handleRemove = async (registrationId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE}/cancel/${registrationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      await API.delete(`/registrations/cancel/${registrationId}`);
       setEvents(events.filter((e) => e.registration_id !== registrationId));
       toast.success("Removed from waitlist");
     } catch (err) {
       console.error("Error removing waitlist:", err);
       toast.error("Failed to remove waitlist entry");
-    }
-  };
-
-  // Notify Me
-  const handleNotify = async (registrationId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/notify/${registrationId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (res.data.already_notified) {
-        setNotified({ ...notified, [registrationId]: true });
-        toast.info(res.data.message || "Already notified");
-      } else {
-        toast.success(res.data.message || "Notification created");
-      }
-    } catch (err) {
-      console.error("Error requesting notification:", err);
-      toast.error("Failed to request notification");
     }
   };
 
@@ -128,31 +105,20 @@ const WaitlistedEvents = () => {
         {events.length > 0 ? (
           events.map((event) => (
             <div className="waitlisted-card" key={event.registration_id}>
-              <img
-                src={`https://source.unsplash.com/random/600x400?${encodeURIComponent(
-                  event.category || "event"
-                )}`}
-                alt={event.eventName}
-                className="event-image"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `https://via.placeholder.com/600x400/cccccc/969696?text=${encodeURIComponent(
-                    event.eventName
-                  )}`;
-                }}
-              />
               <div className="event-details">
-                <span className="event-category">{event.category || "General"}</span>
-                <h3>{event.eventName}</h3>
+                <div className="card-header">
+                  <span className="waitlist-badge">Waitlisted</span>
+                </div>
+                <h3>{pickTitle(event)}</h3>
 
-                <div className="event-meta">
-                  <CalendarIcon />
-                  <span>{formatDate(event.start_time)}</span>
+                <div className="category-row">
+                  <span className="event-category">{pickCategory(event)}</span>
                 </div>
 
                 <div className="event-meta">
-                  <LocationIcon />
-                  <span>{event.location}</span>
+                  <CalendarIcon />
+                  <span className="date">{formatDate(pickStart(event))}</span>
+                  <span className="time">{formatTime(pickStart(event))}</span>
                 </div>
 
                 <div className="waitlist-reason">
@@ -162,17 +128,10 @@ const WaitlistedEvents = () => {
 
                 <div className="waitlist-actions">
                   <button
-                    className="waitlist-btn primary"
-                    onClick={() => handleNotify(event.registration_id)}
-                    disabled={notified[event.registration_id]}
-                  >
-                    {notified[event.registration_id] ? "Notified" : "Notify Me"}
-                  </button>
-                  <button
                     className="waitlist-btn secondary"
                     onClick={() => handleRemove(event.registration_id)}
                   >
-                    Remove
+                    Remove from waitlist
                   </button>
                 </div>
               </div>

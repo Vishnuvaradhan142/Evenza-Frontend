@@ -30,7 +30,7 @@
     radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
     var(--page-bg);
-  padding: 10rem 1.5rem 2.5rem;
+  padding: 6rem 1.5rem 2.5rem;
   min-height: 100vh;
   font-family: Inter, system-ui, sans-serif;
   box-sizing: border-box;
@@ -38,12 +38,36 @@
 }
 
 .page-title {
-  font-size: 2.5rem;
+  font-size: 6rem;
   font-weight: 800;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   color: var(--accent-color);
   text-align: center;
   letter-spacing: -0.02em;
+}
+
+/* Responsive scaling for very small screens */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 2.2rem;
+  }
+}
+
+/* Header wrapper to vertically center title/subtitle in the header area */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 120px; /* reduced header height */
+  margin-top: 3.5rem; /* increased top spacing to move header further down */
+  margin-bottom: 1rem;
 }
 
 .page-subtitle {

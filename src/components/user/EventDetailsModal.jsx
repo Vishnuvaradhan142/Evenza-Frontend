@@ -1,8 +1,68 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import API from "../../api";
 import "./EventDetailsModal.css";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+// Local mapping for category ids to user-friendly labels (used where backend returns numeric ids)
+const categoryIdToLabel = {
+  1: "Technology",
+  2: "Cultural Programs",
+  3: "Sports",
+  4: "Workshops",
+  5: "Music & Concerts",
+  6: "Networking",
+};
+
+const determineCategory = (ev) => {
+  if (!ev) return "";
+
+  // Helper to extract numeric id from multiple possible fields/nested shapes
+  const extractId = (obj) => {
+    if (!obj) return null;
+    const candidates = [
+      obj.category_id,
+      obj.categoryId,
+      obj.cat_id,
+      obj.catId,
+      obj.category && obj.category.id,
+      obj.category && obj.category.category_id,
+      obj.category && obj.categoryId,
+      obj.category && obj.category_id,
+    ];
+    for (const c of candidates) {
+      if (c !== undefined && c !== null && c !== "") {
+        const n = Number(c);
+        if (!isNaN(n)) return n;
+      }
+    }
+    return null;
+  };
+
+  const id = extractId(ev);
+  if (id !== null) {
+    return categoryIdToLabel[id] || (ev.category_name || ev.category_label || ev.category || String(id));
+  }
+
+  // If `category` is an object, prefer its name/label
+  if (ev.category && typeof ev.category === "object") {
+    return ev.category.name || ev.category.label || ev.category.title || JSON.stringify(ev.category);
+  }
+
+  // If category is numeric or numeric string, map it
+  if (typeof ev.category === "number") return categoryIdToLabel[ev.category] || String(ev.category);
+  if (typeof ev.category === "string") {
+    const trimmed = ev.category.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const n = Number(trimmed);
+      return categoryIdToLabel[n] || trimmed;
+    }
+    // Known backend sometimes returns generic 'General' — prefer more specific fields if present
+    return ev.category_name || ev.category_label || trimmed;
+  }
+
+  return ev.category_name || ev.category_label || "";
+};
+
+// Use central API instance (it already prefixes with /api and attaches tokens)
 
 const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false }) => {
   const [tickets, setTickets] = useState([]);
@@ -12,43 +72,54 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
   const [showTicketSelection, setShowTicketSelection] = useState(false);
   const [error, setError] = useState(null);
 
-    const checkRegistrationStatus = React.useCallback(async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `${API_BASE}/registrations/check/${event.event_id || event.id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setRegistrationStatus(response.data.registered ? "registered" : null);
-      } catch (err) {
-        console.error("Error checking registration:", err);
-      }
-    }, [event]);
-
-    const fetchTickets = React.useCallback(async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `${API_BASE}/tickets/event/${event.event_id || event.id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setTickets(response.data || []);
-      } catch (err) {
-        console.error("Error fetching tickets:", err);
-        setTickets([]);
-      }
-    }, [event]);
+    // Previously used callbacks for registration/ticket checks were refactored
+    // into a single defensive effect below; no extra callbacks needed.
 
   useEffect(() => {
+    // Defensive fetch: run when modal opens and event is present
+    if (!isOpen || !event) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const id = event?.event_id ?? event?.id;
+    if (!id) return;
+
+    (async () => {
+      try {
+        const regRes = await API.get(`/registrations/check/${id}`, { signal: controller.signal });
+        if (!cancelled) setRegistrationStatus(regRes.data.registered ? "registered" : null);
+      } catch (err) {
+        // log but don't rethrow
+        console.error("Error checking registration:", err);
+      }
+
+      try {
+        const ticketsRes = await API.get(`/tickets/event/${id}`, { signal: controller.signal });
+        if (!cancelled) setTickets(ticketsRes.data || []);
+      } catch (err) {
+        console.error("Error fetching tickets:", err);
+        if (!cancelled) setTickets([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try { controller.abort(); } catch (e) { /* ignore */ }
+    };
+  }, [isOpen, event]);
+
+  // Helpful debug: log event object when modal opens so we can inspect available category fields
+  useEffect(() => {
     if (isOpen && event) {
-      checkRegistrationStatus();
-      fetchTickets();
+      try {
+        // eslint-disable-next-line no-console
+        console.debug("EventDetailsModal - event payload:", event);
+      } catch (e) {
+        // ignore
+      }
     }
-  }, [isOpen, event, checkRegistrationStatus, fetchTickets]);
+  }, [isOpen, event]);
 
   const handleRegisterClick = () => {
     if (registrationStatus === "registered") {
@@ -67,19 +138,12 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_BASE}/registrations`,
-        {
-          event_id: event.event_id || event.id,
-          ticket_type: "Free",
-          amount: 0,
-          status: "confirmed",
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await API.post(`/registrations`, {
+        event_id: event.event_id || event.id,
+        ticket_type: "Free",
+        amount: 0,
+        status: "confirmed",
+      });
 
       if (response.data.success) {
         setRegistrationStatus("registered");
@@ -103,19 +167,12 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_BASE}/registrations`,
-        {
-          event_id: event.event_id || event.id,
-          ticket_type: selectedTicket.ticket_type,
-          amount: selectedTicket.price,
-          status: "confirmed",
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await API.post(`/registrations`, {
+        event_id: event.event_id || event.id,
+        ticket_type: selectedTicket.ticket_type,
+        amount: selectedTicket.price,
+        status: "confirmed",
+      });
 
       if (response.data.success) {
         setRegistrationStatus("registered");
@@ -170,20 +227,45 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
   };
 
   const getLocation = (event) => {
-    if (event.location) return event.location;
-    if (event.locations) {
+    // Prefer simple fields first
+    const candidates = [
+      event.location,
+      event.location_name,
+      event.location_label,
+      event.venue,
+      event.place,
+      event.address,
+      event.city,
+    ];
+
+    for (const c of candidates) {
+      if (c && typeof c === "string" && c.trim().length) return c.trim();
+    }
+
+    // Handle structured locations (array or object), including JSON-stringified values
+    const raw = event.locations || event.location_details || event.location_obj;
+    if (raw) {
       try {
-        const loc = typeof event.locations === "string" 
-          ? JSON.parse(event.locations) 
-          : event.locations;
-        if (Array.isArray(loc)) {
-          return loc[0]?.address || loc[0]?.city || loc[0]?.name || "Location TBA";
+        const loc = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (Array.isArray(loc) && loc.length > 0) {
+          const first = loc[0];
+          const parts = [first.name, first.label, first.address, first.city, first.venue].filter(Boolean);
+          if (parts.length) return parts.join(" — ");
+          // fallback to stringify small object
+          return first.name || first.address || JSON.stringify(first);
         }
-        return loc.address || loc.city || loc.name || "Location TBA";
-      } catch {
-        return "Location TBA";
+        if (loc && typeof loc === 'object') {
+          const parts = [loc.name, loc.label, loc.address, loc.city, loc.venue].filter(Boolean);
+          if (parts.length) return parts.join(" — ");
+        }
+      } catch (e) {
+        // ignore parse error and fall through
       }
     }
+
+    // Last resort: check nested fields commonly used by different schemas
+    if (event.location_lat && event.location_lng) return `Lat: ${event.location_lat}, Lng: ${event.location_lng}`;
+
     return "Location TBA";
   };
 
@@ -218,8 +300,8 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
                     </span>
                   )}
                   <span className="meta-item">📍 {getLocation(event)}</span>
-                  {event.category && (
-                    <span className="meta-item category-badge">{event.category}</span>
+                  {determineCategory(event) && (
+                    <span className="meta-item category-badge">{determineCategory(event)}</span>
                   )}
                   {event.capacity && (
                     <span className="meta-item">👥 Capacity: {event.capacity}</span>
@@ -258,27 +340,71 @@ const EventDetailsModal = ({ event, isOpen, onClose, hideRegisterButton = false 
               {event.locations && (
                 <div className="modal-section">
                   <h3>Location Details</h3>
-                  <pre style={{ fontSize: 13, background: 'var(--c-surface, #f8fafc)', padding: 12, borderRadius: 8, color: 'var(--c-text, #111)' }}>
-                    {typeof event.locations === 'string' ? event.locations : JSON.stringify(event.locations, null, 2)}
-                  </pre>
+                  {(() => {
+                    try {
+                      const rawLoc = typeof event.locations === 'string' ? JSON.parse(event.locations) : event.locations;
+                      if (Array.isArray(rawLoc) && rawLoc.length > 0) {
+                        const first = rawLoc[0];
+                        const parts = [first.name, first.label, first.address, first.city, first.venue].filter(Boolean);
+                        return <p style={{ fontSize: 14 }}>{parts.join(' — ')}</p>;
+                      }
+                      if (rawLoc && typeof rawLoc === 'object') {
+                        const parts = [rawLoc.name, rawLoc.label, rawLoc.address, rawLoc.city, rawLoc.venue].filter(Boolean);
+                        return <p style={{ fontSize: 14 }}>{parts.join(' — ')}</p>;
+                      }
+                      return <p style={{ fontSize: 13 }}>{String(rawLoc)}</p>;
+                    } catch (e) {
+                      return <pre style={{ fontSize: 13, background: 'var(--c-surface, #f8fafc)', padding: 12, borderRadius: 8, color: 'var(--c-text, #111)' }}>{String(event.locations)}</pre>;
+                    }
+                  })()}
                 </div>
               )}
 
               {event.sessions && (
                 <div className="modal-section">
                   <h3>Sessions</h3>
-                  <pre style={{ fontSize: 13, background: 'var(--c-surface, #f8fafc)', padding: 12, borderRadius: 8, color: 'var(--c-text, #111)' }}>
-                    {typeof event.sessions === 'string' ? event.sessions : JSON.stringify(event.sessions, null, 2)}
-                  </pre>
+                  {(() => {
+                    try {
+                      const raw = typeof event.sessions === 'string' ? JSON.parse(event.sessions) : event.sessions;
+                      if (Array.isArray(raw) && raw.length > 0) {
+                        return (
+                          <ul style={{ paddingLeft: 18 }}>
+                            {raw.map((s, idx) => (
+                              <li key={idx} style={{ marginBottom: 6 }}>
+                                <strong>{s.title || s.name || `Session ${idx + 1}`}</strong>
+                                {s.start || s.end ? (
+                                  <span style={{ marginLeft: 8, color: 'var(--c-muted, #64748b)' }}>
+                                    {s.start ? s.start : ''}{s.start && s.end ? ' — ' : ''}{s.end ? s.end : ''}
+                                  </span>
+                                ) : null}
+                                {s.desc ? <div style={{ fontSize: 13, color: 'var(--c-muted, #64748b)' }}>{s.desc}</div> : null}
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      }
+                      return <p style={{ fontSize: 13 }}>{String(raw)}</p>;
+                    } catch (e) {
+                      return <pre style={{ fontSize: 13, background: 'var(--c-surface, #f8fafc)', padding: 12, borderRadius: 8, color: 'var(--c-text, #111)' }}>{String(event.sessions)}</pre>;
+                    }
+                  })()}
                 </div>
               )}
 
-              {event.documents && (
+              {event.documents && Array.isArray(event.documents) && event.documents.length > 0 && (
                 <div className="modal-section">
                   <h3>Documents</h3>
-                  <pre style={{ fontSize: 13, background: 'var(--c-surface, #f8fafc)', padding: 12, borderRadius: 8, color: 'var(--c-text, #111)' }}>
-                    {typeof event.documents === 'string' ? event.documents : JSON.stringify(event.documents, null, 2)}
-                  </pre>
+                  <ul style={{ paddingLeft: 18 }}>
+                    {event.documents.map((doc, i) => (
+                      <li key={i}>
+                        {typeof doc === 'string' ? (
+                          <a href={doc} target="_blank" rel="noreferrer">{doc}</a>
+                        ) : (
+                          <a href={doc.url || doc.path} target="_blank" rel="noreferrer">{doc.name || doc.title || doc.path || doc.url}</a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 

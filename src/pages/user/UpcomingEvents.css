@@ -91,6 +91,24 @@
   object-position: center;
 }
 
+.event-media {
+  position: relative;
+}
+
+.event-media img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.event-date {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
 .event-details {
   padding: 1.5rem;
   flex-grow: 1;

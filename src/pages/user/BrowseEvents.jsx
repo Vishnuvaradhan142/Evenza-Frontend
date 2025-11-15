@@ -1,13 +1,44 @@
 // BrowseEvents.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import axios from "axios";
+import API from "../../api";
+import { NotificationContext } from "../../context/NotificationContext";
 import "./BrowseEvents.css";
 import EventDetailsModal from "../../components/user/EventDetailsModal";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+// Mapping from DB numeric category IDs to friendly labels (same order used elsewhere)
+const categoryIdToLabel = {
+  1: "Technology",
+  2: "Cultural Programs",
+  3: "Sports",
+  4: "Workshops",
+  5: "Music & Concerts",
+  6: "Networking",
+};
+
+// Normalize category field for an event object
+const determineCategory = (e) => {
+  if (!e) return "";
+  if (e.category_id !== undefined && e.category_id !== null && e.category_id !== "") {
+    const n = Number(e.category_id);
+    if (!isNaN(n) && n > 0) {
+      if (categoryIdToLabel[n]) return categoryIdToLabel[n];
+    }
+  }
+  // fallback to other fields
+  const cand = e.category || e.category_name || e.type || (e.tags && e.tags[0]) || "";
+  if (typeof cand === 'string') {
+    const s = cand.trim();
+    if (s.length === 0) return "";
+    return s;
+  }
+  return String(cand || "");
+};
 
 const BrowseEvents = () => {
   const [events, setEvents] = useState([]);
+  const [savedIds, setSavedIds] = useState(new Set());
+  const { addNotification } = useContext(NotificationContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(true);
@@ -24,10 +55,13 @@ const BrowseEvents = () => {
     setLoading(true);
     setError(null);
 
-    axios
-      .get(`${API_BASE}/events`, { signal: controller.signal })
+    API
+      .get(`/events`, { signal: controller.signal })
       .then((res) => {
-        setEvents(Array.isArray(res.data) ? res.data : []);
+        const raw = Array.isArray(res.data) ? res.data : [];
+        // Normalize categories so filters can show friendly labels
+        const normalized = raw.map((ev) => ({ ...ev, category: determineCategory(ev) }));
+        setEvents(normalized);
       })
       .catch((err) => {
         if (axios.isCancel(err)) return;
@@ -37,6 +71,21 @@ const BrowseEvents = () => {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
+  }, []);
+
+  // Fetch saved events for current user to toggle save state
+  useEffect(() => {
+    const fetchSaved = async () => {
+      try {
+        // Use central API instance (it attaches token)
+        const res = await API.get(`/saved-events/my`);
+        const ids = new Set((res.data || []).map((s) => Number(s.event_id)));
+        setSavedIds(ids);
+      } catch (err) {
+        console.error("Error fetching saved events ids:", err);
+      }
+    };
+    fetchSaved();
   }, []);
 
   // Build category list
@@ -53,6 +102,18 @@ const BrowseEvents = () => {
   const filteredEvents = useMemo(() => {
     let result = [...events];
     const term = (searchTerm || "").trim().toLowerCase();
+
+    // Exclude past events by default: date-wise filters focus on upcoming/current events
+    const now = new Date();
+    result = result.filter((ev) => {
+      if (!ev.start_time) return true;
+      try {
+        const d = new Date(ev.start_time);
+        return d >= now;
+      } catch (err) {
+        return true;
+      }
+    });
 
     // Search
     if (term) {
@@ -107,8 +168,13 @@ const BrowseEvents = () => {
           return new Date(a.start_time || 0) - new Date(b.start_time || 0);
         case "title":
           return (a.title || "").localeCompare(b.title || "");
-        case "popularity":
-          return (b.attendees_count || 0) - (a.attendees_count || 0);
+        case "popularity": {
+          // Try multiple fields that may represent attendee counts
+          const getCount = (ev) => {
+            return Number(ev.attendees_count ?? ev.attendeesCount ?? ev.attendees ?? ev.registered_count ?? ev.registrations_count ?? ev.registered ?? 0) || 0;
+          };
+          return getCount(b) - getCount(a);
+        }
         default:
           return 0;
       }
@@ -124,6 +190,36 @@ const BrowseEvents = () => {
     const keyword = encodeURIComponent(ev.category || ev.title || "event");
     return `https://source.unsplash.com/600x400/?${keyword}`;
   }, []);
+
+  // Toggle saved state for an event (calls backend save/remove)
+  const toggleSaved = async (eventId, e) => {
+    if (e) e.stopPropagation();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+    try {
+      if (savedIds.has(Number(eventId))) {
+        // remove
+        await API.delete(`/saved-events/remove/${eventId}`);
+        const next = new Set(savedIds);
+        next.delete(Number(eventId));
+        setSavedIds(next);
+        addNotification({ text: "Removed from saved events", type: "info" });
+      } else {
+        // save
+        await API.post(`/saved-events/save`, { event_id: eventId });
+        const next = new Set(savedIds);
+        next.add(Number(eventId));
+        setSavedIds(next);
+        addNotification({ text: "Event saved", type: "event" });
+      }
+    } catch (err) {
+      console.error("Error toggling saved event:", err);
+      addNotification({ text: "Failed to save event", type: "alert" });
+    }
+  };
 
   const formatDate = useCallback((dateString) => {
     if (!dateString) return "Date TBA";
@@ -249,7 +345,7 @@ const BrowseEvents = () => {
               <option value="week">This Week</option>
               <option value="month">This Month</option>
               <option value="upcoming">Upcoming</option>
-              <option value="past">Past Events</option>
+              {/* Past events intentionally omitted from date filter to keep lists focused on upcoming/current events */}
             </select>
 
             <select
@@ -304,7 +400,12 @@ const BrowseEvents = () => {
                   key={id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => handleRegister(id)}
+                  onClick={(e) => {
+                    // if click originated from the wishlist button, ignore to prevent opening modal
+                    const btn = e.target && e.target.closest && e.target.closest('.de-wish');
+                    if (btn) return;
+                    handleRegister(id);
+                  }}
                 >
                   <div className="event-media de-media">
                     <img
@@ -324,15 +425,12 @@ const BrowseEvents = () => {
                     )}
 
                     <button
-                      className={`de-wish`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // quick local toggle (non-persistent)
-                        e.currentTarget.classList.toggle("active");
-                      }}
-                      aria-label="Save event"
+                      type="button"
+                      className={`de-wish ${savedIds.has(Number(id)) ? 'active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation(); toggleSaved(id, e); }}
+                      aria-label={savedIds.has(Number(id)) ? "Unsave event" : "Save event"}
                     >
-                      ♥
+                      {savedIds.has(Number(id)) ? '♥' : '♡'}
                     </button>
                   </div>
 

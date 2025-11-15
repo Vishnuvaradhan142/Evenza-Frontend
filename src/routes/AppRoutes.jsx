@@ -22,12 +22,14 @@ import BrowseEvents from "../pages/user/BrowseEvents";
 import SavedEvents from "../pages/user/SavedEvents";
 import MyEvents from "../pages/user/MyEvents";
 import ChatRooms from "../pages/user/ChatRooms";
+import Reviewing from "../pages/community/Reviewing";
 // Removed: Friends
 import Notifications from "../pages/user/Notifications";
 import FAQs from "../pages/user/FAQs";
 import Certificates from "../pages/user/BadgesCertificates";
 import Profile from "../pages/user/Profile";
 import UpcomingEvents from "../pages/user/UpcomingEvents";
+import WaitlistedEvents from "../pages/user/WaitlistedEvents";
 
 // Admin Pages
 import AddEvent from "../pages/admin/AddEvent";
@@ -85,9 +87,11 @@ const AppRoutes = () => {
           <Route path="events/browse" element={<BrowseEvents />} />
           <Route path="events/saved" element={<SavedEvents />} />
           <Route path="events/my-events" element={<MyEvents />} />
+          <Route path="events/waitlisted" element={<WaitlistedEvents />} />
           <Route path="events/upcoming" element={<UpcomingEvents />} />
           {/* COMMUNITY */}
           <Route path="community/chat" element={<ChatRooms />} />
+          <Route path="community/reviewing" element={<Reviewing />} />
           <Route path="community/notifications" element={<Notifications />} />
           <Route path="community/faqs" element={<FAQs />} />
           {/* ACHIEVEMENTS */}
